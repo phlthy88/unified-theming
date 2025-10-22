@@ -465,12 +465,14 @@ def sample_validation_result():
             ValidationMessage(
                 level=ValidationLevel.WARNING,
                 message="Missing GTK4 theme files",
-                context="GTK4 support incomplete"
+                component="parser",
+                details="GTK4 support incomplete"
             ),
             ValidationMessage(
                 level=ValidationLevel.ERROR,
                 message="No color definitions found",
-                context="Theme parsing failed"
+                component="parser",
+                details="Theme parsing failed"
             )
         ]
     )

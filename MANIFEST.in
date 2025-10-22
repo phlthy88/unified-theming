@@ -1,0 +1,47 @@
+# Include important files
+include README.md
+include LICENSE
+include CONTRIBUTING.md
+include pyproject.toml
+
+# Include package data
+recursive-include unified_theming *.py
+recursive-include unified_theming *.typed
+
+# Include tests
+recursive-include tests *.py
+recursive-include tests/fixtures *
+
+# Include documentation
+recursive-include docs *.md
+
+# Include examples
+recursive-include examples *.py
+
+# Exclude unnecessary files
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *__pycache__*
+global-exclude *.so
+global-exclude .DS_Store
+
+# Exclude build artifacts
+prune build
+prune dist
+prune *.egg-info
+prune htmlcov
+prune .pytest_cache
+prune .mypy_cache
+prune .coverage
+
+# Exclude venv and packaging directories
+prune venv
+prune packaging
+prune reports
+
+# Exclude git and CI files
+prune .git
+prune .github
+exclude .gitignore
+exclude .coverage
+exclude coverage.xml

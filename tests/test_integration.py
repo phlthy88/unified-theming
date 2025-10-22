@@ -15,6 +15,9 @@ from unified_theming.core.config import ConfigManager
 from unified_theming.core.types import ValidationLevel
 
 # Import fixtures
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from tests.fixtures.integration_fixtures import (
     mock_file_system,
     mock_theme_adwaita_dark,
