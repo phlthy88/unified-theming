@@ -8,6 +8,9 @@ a user-friendly command-line interface for all core operations.
 import click
 from typing import Optional, List, Tuple
 from pathlib import Path
+import re
+from click import Context, Parameter
+from click.shell_completion import CompletionItem
 import sys
 
 from unified_theming.core.manager import UnifiedThemeManager
@@ -16,6 +19,8 @@ from unified_theming.core.types import Toolkit
 
 # Version information
 __version__ = "1.0.0"
+
+
 
 
 # ============================================================================
@@ -56,6 +61,7 @@ def cli(ctx, verbose: int, config: Optional[Path], no_color: bool):
 
     For more information, visit: https://github.com/yourusername/unified-theming
     """
+    ctx.ensure_object(dict)
     # Initialize context object
     ctx.ensure_object(dict)
     ctx.obj['verbose'] = verbose
@@ -146,14 +152,18 @@ def list(ctx, toolkit: Tuple[str, ...], format: str):
 # Apply Command
 # ============================================================================
 
-@cli.command()
+@cli.command("set-theme")
+@click.argument('theme_name')
 @click.option(
     '--targets',
     multiple=True,
-    type=click.Choice([
-        'gtk2', 'gtk3', 'gtk4', 'libadwaita',
-        'qt5', 'qt6', 'flatpak', 'snap', 'all'
-    ], case_sensitive=False),
+    type=click.Choice(
+        [
+            "gtk2", "gtk3", "gtk4", "libadwaita",
+            "qt5", "qt6", "flatpak", "snap", "all"
+        ],
+        case_sensitive=False,
+    ),
     help='Target toolkits (default: all)'
 )
 @click.option(
@@ -161,9 +171,8 @@ def list(ctx, toolkit: Tuple[str, ...], format: str):
     is_flag=True,
     help='Preview changes without applying them (safe, non-destructive)'
 )
-@click.argument('theme_name')
 @click.pass_context
-def apply(ctx, targets: Tuple[str, ...], dry_run: bool, theme_name: str):
+def set_theme(ctx, theme_name: str, targets: Tuple[str, ...], dry_run: bool):
     """
     Apply THEME_NAME to specified targets.
 

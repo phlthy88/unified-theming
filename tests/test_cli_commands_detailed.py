@@ -8,7 +8,7 @@ import json
 from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
 
-from unified_theming.cli.commands import cli, list, apply, current, rollback, validate, main
+from unified_theming.cli.commands import cli, list, set_theme, current, rollback, validate
 from unified_theming.core.types import ThemeInfo, Toolkit, ApplicationResult, HandlerResult, ValidationResult, ValidationMessage, ValidationLevel
 
 
@@ -166,11 +166,11 @@ class TestListCommand:
             assert 'Error listing themes:' in result.output
 
 
-class TestApplyCommand:
-    """Test the apply command functionality."""
-    
-    def test_apply_command_basic(self, cli_runner):
-        """Test basic apply command functionality."""
+class TestSetThemeCommand:
+    """Test the set-theme command functionality."""
+
+    def test_set_theme_command_basic(self, cli_runner):
+        """Test basic set-theme command functionality."""
         with patch('unified_theming.cli.commands.UnifiedThemeManager') as mock_manager_class:
             mock_manager = Mock()
             mock_manager.apply_theme.return_value = ApplicationResult(
@@ -187,7 +187,7 @@ class TestApplyCommand:
             )
             mock_manager_class.return_value = mock_manager
             
-            result = cli_runner.invoke(cli, ['apply', 'Adwaita-dark'])
+            result = cli_runner.invoke(cli, ['set-theme', 'Adwaita-dark'])
             assert result.exit_code == 0
             assert "Applying theme 'Adwaita-dark'..." in result.output
             assert "✓ Theme 'Adwaita-dark' applied successfully!" in result.output
@@ -210,7 +210,7 @@ class TestApplyCommand:
             )
             mock_manager_class.return_value = mock_manager
             
-            result = cli_runner.invoke(cli, ['apply', 'Adwaita-dark', '--targets', 'all'])
+            result = cli_runner.invoke(cli, ['set-theme', 'Adwaita-dark', '--targets', 'all'])
             # The command should execute without CLI argument errors
             assert result.exit_code == 0
             assert "Applying theme 'Adwaita-dark'..." in result.output
@@ -221,12 +221,27 @@ class TestApplyCommand:
         with patch('unified_theming.cli.commands.UnifiedThemeManager') as mock_manager_class:
             mock_manager_class.side_effect = Exception("Mock error")
             
-            result = cli_runner.invoke(cli, ['apply', 'Adwaita-dark'])
+            result = cli_runner.invoke(cli, ['set-theme', 'Adwaita-dark'])
             assert result.exit_code == 1
             assert '✗ Error applying theme:' in result.output
     
     def test_apply_command_handler_failure(self, cli_runner):
         """Test apply command when handler fails."""
+
+    def test_set_theme_command_with_numbered_target(self, cli_runner):
+        """Test set-theme command with a numbered target like 'gtk4'."""
+        with patch('unified_theming.cli.commands.UnifiedThemeManager') as mock_manager_class:
+            mock_manager = Mock()
+            mock_manager.apply_theme.return_value = ApplicationResult(
+                theme_name="Adwaita-dark",
+                overall_success=True,
+                handler_results={}
+            )
+            mock_manager_class.return_value = mock_manager
+
+            result = cli_runner.invoke(cli, ['set-theme', 'Adwaita-dark', '--targets', 'gtk4'], catch_exceptions=False)
+            assert result.exit_code == 0
+            assert "Applying theme 'Adwaita-dark'..." in result.output
         with patch('unified_theming.cli.commands.UnifiedThemeManager') as mock_manager_class:
             mock_manager = Mock()
             mock_manager.apply_theme.return_value = ApplicationResult(
@@ -243,7 +258,7 @@ class TestApplyCommand:
             )
             mock_manager_class.return_value = mock_manager
             
-            result = cli_runner.invoke(cli, ['apply', 'Adwaita-dark'])
+            result = cli_runner.invoke(cli, ['set-theme', 'Adwaita-dark'])
             assert result.exit_code == 0  # Even with failures, exit code is 0 if no exception
             assert "✗ gtk: Failed to apply theme" in result.output
 
@@ -526,10 +541,10 @@ class TestConfigOption:
 
 class TestArgumentParsing:
     """Test argument parsing edge cases."""
-    
-    def test_apply_command_missing_theme_name(self, cli_runner):
-        """Test apply command when theme name is missing."""
-        result = cli_runner.invoke(cli, ['apply'])
+
+    def test_set_theme_command_missing_theme_name(self, cli_runner):
+        """Test set-theme command when theme name is missing."""
+        result = cli_runner.invoke(cli, ['set-theme'])
         # Should fail because theme name is required
         assert result.exit_code != 0
         assert 'Usage:' in result.output or 'Error:' in result.output
