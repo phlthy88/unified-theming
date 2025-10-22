@@ -26,7 +26,7 @@ jobs:
     - name: Code Style Check
       run: |
         black --check unified_theming tests examples/
-        flake8 unified_theming tests examples/ --max-line-length=88 --extend-ignore=E203,W503
+        flake8 unified_theming tests examples/
 
     - name: Type Check
       run: |
