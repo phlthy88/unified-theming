@@ -1,87 +1,101 @@
-# Unified Theming Application
+# Unified Theming System
 
-A comprehensive solution for applying consistent themes across GTK, Qt, and containerized applications on Linux.
+## Project Overview
 
-## Overview
-
-Unified Theming simplifies the complex task of theming Linux desktop applications by:
-- Applying themes across GTK2, GTK3, GTK4, and libadwaita applications
-- Translating and applying themes to Qt5 and Qt6 applications
-- Handling containerized applications (Flatpak, Snap)
-- Providing both CLI and GUI interfaces
-
-## Project Status
-
-**Current Phase:** Phase 1 - Planning & Foundation
-**Development Stage:** Architecture & Specification
-**Agent:** Claude Code (Sonnet 4.5)
+Unified Theming is a comprehensive solution for applying consistent themes across GTK, Qt, and containerized applications on Linux. The project simplifies the complex task of theming Linux desktop applications by providing a unified interface to theme multiple GUI toolkits and application packaging formats (Flatpak, Snap).
 
 ## Features (Planned)
-
-### Theme Support
-- **GTK 2/3**: Native theming via GSettings (95% coverage)
-- **GTK 4**: CSS-based theming (85% coverage)
-- **Libadwaita**: CSS injection method (70% coverage)
-- **Qt 5/6**: kdeglobals + Kvantum integration (75% coverage)
-- **Flatpak**: Portal and override configuration (70% coverage)
-- **Snap**: Interface and portal integration (65% coverage)
-
-### User Interfaces
-- **CLI**: Full-featured command-line interface for power users
-- **GUI**: Modern GTK4/Libadwaita interface for general users
-
-### Safety Features
-- Automatic backup before theme changes
-- Rollback capability
-- Theme validation and compatibility checking
-- Graceful degradation when toolkits unavailable
-
-## Documentation
-
-- [Requirements Specification](docs/requirements_specification.md)
-- [System Architecture](docs/architecture.md)
-- [API Specifications](docs/api_specifications.md)
-- [Developer Guide](docs/developer_guide.md)
-
-## Development Timeline
-
-| Phase | Duration | Agent | Status |
-|-------|----------|-------|--------|
-| 1: Planning & Foundation | 4-6 weeks | Claude Code | 🔄 In Progress |
-| 2: Core Engineering | 8-10 weeks | Qwen Coder | ⏳ Pending |
-| 3: Integration & Release | 6-8 weeks | Opencode AI | ⏳ Pending |
-
-**Total Estimated Timeline:** 18-24 weeks to v1.0 release
+- **GTK 2/3/4 & Libadwaita:** Native theming via GSettings and CSS injection
+- **Qt 5/6:** kdeglobals + Kvantum integration
+- **Containerized Apps:** Support for Flatpak and Snap applications
+- **Both CLI and GUI:** Full-featured command-line and modern GTK4/Libadwaita interfaces
+- **Safety Features:** Automatic backup, rollback, validation, and graceful degradation
 
 ## Technology Stack
 
-- **Language**: Python 3.10+
-- **GUI Framework**: GTK4 + Libadwaita
-- **CLI Framework**: Click
-- **Testing**: pytest
-- **Type Checking**: mypy
-- **Linting**: flake8, black
+- **Language:** Python 3.10+
+- **GUI Framework:** GTK4 + Libadwaita (for future GUI implementation)
+- **CLI Framework:** Click
+- **Testing:** pytest
+- **Type Checking:** mypy
+- **Linting:** flake8, black
+- **Build System:** setuptools
 
-## System Requirements
+## Installation
 
-- Python 3.10+
-- GTK 4.10+
-- Qt 5.15+ or Qt 6.2+ (optional)
-- Flatpak 1.12+ (optional)
-- Snapd (optional)
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/unified-theming.git
+cd unified-theming
+
+# Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install in development mode with all dependencies
+pip install -e ".[dev,gui]"
+```
+
+## Usage
+
+```bash
+# List available themes
+unified-theme list
+
+# Apply a theme
+unified-theme apply <theme-name>
+
+# Show current theme
+unified-theme current
+
+# Validate a theme
+unified-theme validate <theme-name>
+
+# Create backup
+unified-theme backup create
+
+# List backups
+unified-theme backup list
+
+# Restore from backup
+unified-theme backup restore <backup-id>
+```
+
+## Development
+
+### Prerequisites
+- Linux distribution (Ubuntu 22.04+, Fedora 37+, or equivalent)
+- Python 3.10 or higher
+- GTK 4.10+ development files
+- Git
+
+### Quick Start for Development
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/unified-theming.git
+cd unified-theming
+
+# Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install in development mode with all dependencies
+pip install -e ".[dev,gui]"
+
+# Run tests to verify setup
+pytest
+
+# Run linting checks
+black --check unified_theming/
+flake8 unified_theming/
+mypy unified_theming/
+```
+
+## Project Status
+- **Current Phase:** Phase 1 - Planning & Foundation (Complete)
+- **Development Stage:** Architecture & Specification (Complete)
+- **Next Phase:** Phase 2 - Core Engineering (Starting)
 
 ## License
 
-[To be determined]
-
-## Contributing
-
-This project is currently in the planning phase. Contribution guidelines will be available after Phase 2 completion.
-
-## Acknowledgments
-
-Built on research and inspiration from:
-- Linux Mint's libAdapta project
-- Zorin OS theming approach
-- Gradience color theming
-- Community GTK/Qt theming efforts
+[License information should be added here]
