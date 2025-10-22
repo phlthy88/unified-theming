@@ -10,6 +10,11 @@ import re
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
+from ..core.exceptions import (
+    ThemeDiscoveryError,
+    ThemeNotFoundError,
+    InvalidThemeError,
+)
 from ..core.types import ThemeInfo, Toolkit, ColorPalette, ValidationResult
 from ..utils.file import read_file_with_fallback
 from ..utils.logging_config import get_logger

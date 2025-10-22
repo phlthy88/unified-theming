@@ -17,8 +17,6 @@ from unified_theming.core.types import (
 )
 from unified_theming.core.exceptions import (
     ThemeNotFoundError,
-    ThemeApplicationError,
-    ValidationError,
 )
 
 

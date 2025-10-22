@@ -17,9 +17,7 @@ from ..utils.logging_config import get_logger
 from .config import ConfigManager
 from .exceptions import (
     RollbackError,
-    ThemeApplicationError,
     ThemeNotFoundError,
-    ValidationError,
 )
 from .parser import UnifiedThemeParser
 from .types import (
