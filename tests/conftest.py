@@ -1,10 +1,11 @@
 """
 Shared pytest fixtures for Unified Theming Application tests.
 """
+
 import pytest
-from pathlib import Path
+
 from unified_theming.core.parser import UnifiedThemeParser
-from unified_theming.core.types import ThemeInfo, ThemeData, Toolkit
+from unified_theming.core.types import ThemeData, Toolkit
 
 
 @pytest.fixture
@@ -24,20 +25,24 @@ def valid_theme(tmp_path):
     # GTK4 support
     gtk4 = theme / "gtk-4.0"
     gtk4.mkdir()
-    (gtk4 / "gtk.css").write_text("""
+    (gtk4 / "gtk.css").write_text(
+        """
 @define-color theme_bg_color #ffffff;
 @define-color theme_fg_color #000000;
 @define-color theme_selected_bg_color #3584e4;
 @define-color theme_selected_fg_color #ffffff;
-    """)
+    """
+    )
 
     # GTK3 support
     gtk3 = theme / "gtk-3.0"
     gtk3.mkdir()
-    (gtk3 / "gtk.css").write_text("""
+    (gtk3 / "gtk.css").write_text(
+        """
 @define-color theme_bg_color #ffffff;
 @define-color theme_fg_color #000000;
-    """)
+    """
+    )
 
     return theme
 
@@ -51,10 +56,12 @@ def incomplete_theme(tmp_path):
     # Only GTK3 support (no GTK4)
     gtk3 = theme / "gtk-3.0"
     gtk3.mkdir()
-    (gtk3 / "gtk.css").write_text("""
+    (gtk3 / "gtk.css").write_text(
+        """
 @define-color theme_bg_color #ffffff;
 @define-color theme_fg_color #000000;
-    """)
+    """
+    )
 
     return theme
 
@@ -68,12 +75,14 @@ def malformed_theme(tmp_path):
     # GTK4 with malformed CSS
     gtk4 = theme / "gtk-4.0"
     gtk4.mkdir()
-    (gtk4 / "gtk.css").write_text("""
+    (gtk4 / "gtk.css").write_text(
+        """
 @define-color theme_bg_color #ffffff;
 /* Intentionally malformed - unclosed brace */
 .some-selector {
     color: red;
-    """)
+    """
+    )
 
     return theme
 
@@ -94,6 +103,6 @@ def sample_theme_data():
             "theme_bg_color": "#ffffff",
             "theme_fg_color": "#000000",
             "theme_selected_bg_color": "#3584e4",
-            "theme_selected_fg_color": "#ffffff"
-        }
+            "theme_selected_fg_color": "#ffffff",
+        },
     )

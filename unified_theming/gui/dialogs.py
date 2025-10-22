@@ -6,13 +6,15 @@ modal interactions.
 """
 
 import gi
-gi.require_version('Gtk', '4.0')
-gi.require_version('Adw', '1')
 
-from gi.repository import Gtk, Adw, GLib
-from pathlib import Path
-from typing import Optional, Dict, Any, Callable
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
+
 import sys
+from pathlib import Path
+from typing import Any, Callable, Dict, Optional
+
+from gi.repository import Adw, GLib, Gtk
 
 # Add the project root to Python path for imports
 project_root = Path(__file__).parent.parent.parent
@@ -69,21 +71,27 @@ class SettingsDialog(Adw.PreferencesWindow):
         # Theme discovery group
         discovery_group = Adw.PreferencesGroup.new()
         discovery_group.set_title("Theme Discovery")
-        discovery_group.set_description("Configure how themes are discovered and displayed")
+        discovery_group.set_description(
+            "Configure how themes are discovered and displayed"
+        )
         general_page.add(discovery_group)
 
         # Auto-refresh toggle
         self.auto_refresh_switch = Adw.SwitchRow.new()
         self.auto_refresh_switch.set_title("Auto-refresh themes")
-        self.auto_refresh_switch.set_subtitle("Automatically refresh theme list when directories change")
-        self.auto_refresh_switch.set_active(self.config.get('auto_refresh', True))
+        self.auto_refresh_switch.set_subtitle(
+            "Automatically refresh theme list when directories change"
+        )
+        self.auto_refresh_switch.set_active(self.config.get("auto_refresh", True))
         discovery_group.add(self.auto_refresh_switch)
 
         # Show hidden themes toggle
         self.show_hidden_switch = Adw.SwitchRow.new()
         self.show_hidden_switch.set_title("Show hidden themes")
-        self.show_hidden_switch.set_subtitle("Include themes whose names start with a dot")
-        self.show_hidden_switch.set_active(self.config.get('show_hidden', False))
+        self.show_hidden_switch.set_subtitle(
+            "Include themes whose names start with a dot"
+        )
+        self.show_hidden_switch.set_active(self.config.get("show_hidden", False))
         discovery_group.add(self.show_hidden_switch)
 
         # Toolkit selection page
@@ -95,13 +103,17 @@ class SettingsDialog(Adw.PreferencesWindow):
         # Enabled toolkits group
         toolkits_group = Adw.PreferencesGroup.new()
         toolkits_group.set_title("Enabled Toolkits")
-        toolkits_group.set_description("Select which toolkits to theme when applying themes")
+        toolkits_group.set_description(
+            "Select which toolkits to theme when applying themes"
+        )
         toolkit_page.add(toolkits_group)
 
         # Create switches for each toolkit
         self.toolkit_switches: Dict[str, Adw.SwitchRow] = {}
 
-        enabled_toolkits = self.config.get('enabled_toolkits', [t.value for t in Toolkit])
+        enabled_toolkits = self.config.get(
+            "enabled_toolkits", [t.value for t in Toolkit]
+        )
 
         for toolkit in Toolkit:
             switch = Adw.SwitchRow.new()
@@ -127,7 +139,7 @@ class SettingsDialog(Adw.PreferencesWindow):
         self.enable_backups_switch = Adw.SwitchRow.new()
         self.enable_backups_switch.set_title("Enable backups")
         self.enable_backups_switch.set_subtitle("Create backups before applying themes")
-        self.enable_backups_switch.set_active(self.config.get('enable_backups', True))
+        self.enable_backups_switch.set_active(self.config.get("enable_backups", True))
         backup_group.add(self.enable_backups_switch)
 
         # Max backups spin button
@@ -135,10 +147,7 @@ class SettingsDialog(Adw.PreferencesWindow):
         self.max_backups_row.set_title("Maximum backups")
         self.max_backups_row.set_subtitle("Maximum number of backups to keep")
         self.max_backups_row.set_adjustment(
-            Gtk.Adjustment.new(
-                self.config.get('max_backups', 10),
-                1, 100, 1, 5, 0
-            )
+            Gtk.Adjustment.new(self.config.get("max_backups", 10), 1, 100, 1, 5, 0)
         )
         backup_group.add(self.max_backups_row)
 
@@ -158,7 +167,7 @@ class SettingsDialog(Adw.PreferencesWindow):
         self.parallel_switch = Adw.SwitchRow.new()
         self.parallel_switch.set_title("Parallel processing")
         self.parallel_switch.set_subtitle("Use multiple threads for theme operations")
-        self.parallel_switch.set_active(self.config.get('parallel_processing', True))
+        self.parallel_switch.set_active(self.config.get("parallel_processing", True))
         perf_group.add(self.parallel_switch)
 
         # Cache settings
@@ -171,7 +180,7 @@ class SettingsDialog(Adw.PreferencesWindow):
         self.cache_switch = Adw.SwitchRow.new()
         self.cache_switch.set_title("Enable cache")
         self.cache_switch.set_subtitle("Cache parsed theme information")
-        self.cache_switch.set_active(self.config.get('enable_cache', True))
+        self.cache_switch.set_active(self.config.get("enable_cache", True))
         cache_group.add(self.cache_switch)
 
         # Cache expiry spin button
@@ -180,8 +189,12 @@ class SettingsDialog(Adw.PreferencesWindow):
         self.cache_expiry_row.set_subtitle("How long to keep cached theme data")
         self.cache_expiry_row.set_adjustment(
             Gtk.Adjustment.new(
-                self.config.get('cache_expiry_hours', 24),
-                1, 168, 1, 6, 0  # 1 hour to 1 week
+                self.config.get("cache_expiry_hours", 24),
+                1,
+                168,
+                1,
+                6,
+                0,  # 1 hour to 1 week
             )
         )
         cache_group.add(self.cache_expiry_row)
@@ -196,24 +209,25 @@ class SettingsDialog(Adw.PreferencesWindow):
         config = {}
 
         # General settings
-        config['auto_refresh'] = self.auto_refresh_switch.get_active()
-        config['show_hidden'] = self.show_hidden_switch.get_active()
+        config["auto_refresh"] = self.auto_refresh_switch.get_active()
+        config["show_hidden"] = self.show_hidden_switch.get_active()
 
         # Toolkit settings
         enabled_toolkits = [
-            toolkit for toolkit, switch in self.toolkit_switches.items()
+            toolkit
+            for toolkit, switch in self.toolkit_switches.items()
             if switch.get_active()
         ]
-        config['enabled_toolkits'] = enabled_toolkits
+        config["enabled_toolkits"] = enabled_toolkits
 
         # Backup settings
-        config['enable_backups'] = self.enable_backups_switch.get_active()
-        config['max_backups'] = int(self.max_backups_row.get_value())
+        config["enable_backups"] = self.enable_backups_switch.get_active()
+        config["max_backups"] = int(self.max_backups_row.get_value())
 
         # Advanced settings
-        config['parallel_processing'] = self.parallel_switch.get_active()
-        config['enable_cache'] = self.cache_switch.get_active()
-        config['cache_expiry_hours'] = int(self.cache_expiry_row.get_value())
+        config["parallel_processing"] = self.parallel_switch.get_active()
+        config["enable_cache"] = self.cache_switch.get_active()
+        config["cache_expiry_hours"] = int(self.cache_expiry_row.get_value())
 
         return config
 
@@ -268,7 +282,9 @@ class ThemeDetailsDialog(Adw.Window):
 
         # Header
         header = Adw.HeaderBar.new()
-        header.set_title_widget(Adw.WindowTitle.new(f"Theme Details - {self.theme_name}", ""))
+        header.set_title_widget(
+            Adw.WindowTitle.new(f"Theme Details - {self.theme_name}", "")
+        )
 
         close_button = Gtk.Button.new_from_icon_name("window-close-symbolic")
         close_button.connect("clicked", lambda b: self.close())
@@ -293,11 +309,11 @@ class ThemeDetailsDialog(Adw.Window):
         # Path row
         path_row = Adw.ActionRow.new()
         path_row.set_title("Path")
-        path_row.set_subtitle(str(getattr(self.theme_info, 'path', 'Unknown')))
+        path_row.set_subtitle(str(getattr(self.theme_info, "path", "Unknown")))
         info_group.add(path_row)
 
         # Toolkits row
-        toolkits = getattr(self.theme_info, 'supported_toolkits', [])
+        toolkits = getattr(self.theme_info, "supported_toolkits", [])
         toolkit_names = [t.value for t in toolkits]
         toolkits_row = Adw.ActionRow.new()
         toolkits_row.set_title("Supported Toolkits")
@@ -307,7 +323,7 @@ class ThemeDetailsDialog(Adw.Window):
         content_box.append(info_group)
 
         # Colors section
-        colors = getattr(self.theme_info, 'colors', {})
+        colors = getattr(self.theme_info, "colors", {})
         if colors:
             colors_group = Adw.PreferencesGroup.new()
             colors_group.set_title(f"Colors ({len(colors)})")
@@ -356,7 +372,7 @@ class ThemeDetailsDialog(Adw.Window):
         # Parse hex color
         try:
             # Remove # if present
-            if hex_color.startswith('#'):
+            if hex_color.startswith("#"):
                 hex_color = hex_color[1:]
 
             # Parse RGB
@@ -387,8 +403,14 @@ class ConfirmationDialog(Adw.MessageDialog):
     Confirmation dialog for destructive actions.
     """
 
-    def __init__(self, parent: Gtk.Window, title: str, message: str,
-                 confirm_label: str = "Confirm", destructive: bool = False):
+    def __init__(
+        self,
+        parent: Gtk.Window,
+        title: str,
+        message: str,
+        confirm_label: str = "Confirm",
+        destructive: bool = False,
+    ):
         """
         Initialize the confirmation dialog.
 
@@ -425,6 +447,7 @@ class ConfirmationDialog(Adw.MessageDialog):
         Args:
             callback: Callback function called with response ID
         """
+
         def on_response(dialog, response):
             callback(response)
             dialog.destroy()

@@ -5,13 +5,15 @@ This module contains reusable widget classes for the GTK4/Libadwaita interface.
 """
 
 import gi
-gi.require_version('Gtk', '4.0')
-gi.require_version('Adw', '1')
 
-from gi.repository import Gtk, Adw, GLib, Gdk
-from pathlib import Path
-from typing import Dict, List, Optional, Callable, Any
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
+
 import sys
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional
+
+from gi.repository import Adw, Gdk, GLib, Gtk
 
 # Add the project root to Python path for imports
 project_root = Path(__file__).parent.parent.parent
@@ -150,7 +152,9 @@ class ThemeListRow(Gtk.ListBoxRow):
 
         # Toolkit count
         toolkit_count = len(self.theme_info.supported_toolkits)
-        count_label = Gtk.Label.new(f"{toolkit_count} toolkit{'s' if toolkit_count != 1 else ''}")
+        count_label = Gtk.Label.new(
+            f"{toolkit_count} toolkit{'s' if toolkit_count != 1 else ''}"
+        )
         count_label.set_halign(Gtk.Align.END)
         count_label.add_css_class("dim-label")
         toolkit_box.append(count_label)
@@ -375,7 +379,7 @@ class ColorSwatch(Gtk.Box):
         try:
             # Remove # if present
             hex_color = self.hex_color
-            if hex_color.startswith('#'):
+            if hex_color.startswith("#"):
                 hex_color = hex_color[1:]
 
             # Parse RGB
@@ -457,7 +461,9 @@ class ProgressDialog(Adw.Window):
 
         self.set_content(box)
 
-    def update_progress(self, fraction: float, text: Optional[str] = None, status: Optional[str] = None):
+    def update_progress(
+        self, fraction: float, text: Optional[str] = None, status: Optional[str] = None
+    ):
         """
         Update progress display.
 

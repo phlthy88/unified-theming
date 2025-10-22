@@ -5,8 +5,8 @@ This module defines all custom exceptions used throughout the application,
 organized in a clear hierarchy for proper error handling.
 """
 
-from typing import Optional, List
 from pathlib import Path
+from typing import List, Optional
 
 
 class UnifiedThemingError(Exception):
@@ -41,11 +41,16 @@ class UnifiedThemingError(Exception):
 # Theme Discovery and Parsing Errors
 # =============================================================================
 
+
 class ThemeDiscoveryError(UnifiedThemingError):
     """Raised when theme discovery fails."""
 
-    def __init__(self, message: str, directory: Optional[Path] = None,
-                 details: Optional[str] = None):
+    def __init__(
+        self,
+        message: str,
+        directory: Optional[Path] = None,
+        details: Optional[str] = None,
+    ):
         """
         Initialize exception.
 
@@ -84,8 +89,7 @@ class ThemeNotFoundError(UnifiedThemingError):
 class InvalidThemeError(UnifiedThemingError):
     """Raised when theme structure is invalid or malformed."""
 
-    def __init__(self, theme_name: str, reason: str,
-                 theme_path: Optional[Path] = None):
+    def __init__(self, theme_name: str, reason: str, theme_path: Optional[Path] = None):
         """
         Initialize exception.
 
@@ -106,8 +110,7 @@ class InvalidThemeError(UnifiedThemingError):
 class ThemeParseError(UnifiedThemingError):
     """Raised when theme file parsing fails."""
 
-    def __init__(self, file_path: Path, reason: str,
-                 line_number: Optional[int] = None):
+    def __init__(self, file_path: Path, reason: str, line_number: Optional[int] = None):
         """
         Initialize exception.
 
@@ -131,6 +134,7 @@ class ThemeParseError(UnifiedThemingError):
 # Theme Application Errors
 # =============================================================================
 
+
 class ThemeApplicationError(UnifiedThemingError):
     """
     Raised when theme application fails.
@@ -140,8 +144,13 @@ class ThemeApplicationError(UnifiedThemingError):
     the error is recoverable.
     """
 
-    def __init__(self, message: str, toolkit: Optional[str] = None,
-                 recoverable: bool = True, details: Optional[str] = None):
+    def __init__(
+        self,
+        message: str,
+        toolkit: Optional[str] = None,
+        recoverable: bool = True,
+        details: Optional[str] = None,
+    ):
         """
         Initialize exception.
 
@@ -205,8 +214,9 @@ class ToolkitNotInstalledError(ThemeApplicationError):
 class ColorTranslationError(ThemeApplicationError):
     """Raised when color translation between toolkits fails."""
 
-    def __init__(self, source_toolkit: str, target_toolkit: str,
-                 color_variable: str, reason: str):
+    def __init__(
+        self, source_toolkit: str, target_toolkit: str, color_variable: str, reason: str
+    ):
         """
         Initialize exception.
 
@@ -216,8 +226,10 @@ class ColorTranslationError(ThemeApplicationError):
             color_variable: Color variable that failed to translate
             reason: Why translation failed
         """
-        message = (f"Failed to translate '{color_variable}' from "
-                   f"{source_toolkit} to {target_toolkit}: {reason}")
+        message = (
+            f"Failed to translate '{color_variable}' from "
+            f"{source_toolkit} to {target_toolkit}: {reason}"
+        )
 
         super().__init__(message, toolkit=target_toolkit, recoverable=True)
         self.source_toolkit = source_toolkit
@@ -228,8 +240,9 @@ class ColorTranslationError(ThemeApplicationError):
 class CSSGenerationError(ThemeApplicationError):
     """Raised when CSS generation fails."""
 
-    def __init__(self, theme_name: str, reason: str,
-                 invalid_colors: Optional[List[str]] = None):
+    def __init__(
+        self, theme_name: str, reason: str, invalid_colors: Optional[List[str]] = None
+    ):
         """
         Initialize exception.
 
@@ -243,8 +256,7 @@ class CSSGenerationError(ThemeApplicationError):
         if invalid_colors:
             details = f"Invalid colors: {', '.join(invalid_colors)}"
 
-        super().__init__(message, toolkit="gtk", recoverable=False,
-                         details=details)
+        super().__init__(message, toolkit="gtk", recoverable=False, details=details)
         self.theme_name = theme_name
         self.invalid_colors = invalid_colors or []
 
@@ -253,11 +265,16 @@ class CSSGenerationError(ThemeApplicationError):
 # Configuration and Backup Errors
 # =============================================================================
 
+
 class BackupError(UnifiedThemingError):
     """Raised when configuration backup fails."""
 
-    def __init__(self, message: str, backup_path: Optional[Path] = None,
-                 details: Optional[str] = None):
+    def __init__(
+        self,
+        message: str,
+        backup_path: Optional[Path] = None,
+        details: Optional[str] = None,
+    ):
         """
         Initialize exception.
 
@@ -291,8 +308,13 @@ class BackupNotFoundError(BackupError):
 class RollbackError(UnifiedThemingError):
     """Raised when rollback operation fails."""
 
-    def __init__(self, message: str, backup_id: Optional[str] = None,
-                 partial_rollback: bool = False, details: Optional[str] = None):
+    def __init__(
+        self,
+        message: str,
+        backup_id: Optional[str] = None,
+        partial_rollback: bool = False,
+        details: Optional[str] = None,
+    ):
         """
         Initialize exception.
 
@@ -310,8 +332,13 @@ class RollbackError(UnifiedThemingError):
 class ConfigurationError(UnifiedThemingError):
     """Raised when application configuration is invalid."""
 
-    def __init__(self, message: str, config_key: Optional[str] = None,
-                 invalid_value: Optional[str] = None, details: Optional[str] = None):
+    def __init__(
+        self,
+        message: str,
+        config_key: Optional[str] = None,
+        invalid_value: Optional[str] = None,
+        details: Optional[str] = None,
+    ):
         """
         Initialize exception.
 
@@ -330,11 +357,13 @@ class ConfigurationError(UnifiedThemingError):
 # File System Errors
 # =============================================================================
 
+
 class FileSystemError(UnifiedThemingError):
     """Base class for file system related errors."""
 
-    def __init__(self, message: str, path: Optional[Path] = None,
-                 details: Optional[str] = None):
+    def __init__(
+        self, message: str, path: Optional[Path] = None, details: Optional[str] = None
+    ):
         """
         Initialize exception.
 
@@ -416,11 +445,16 @@ class DirectoryNotFoundError(FileSystemError):
 # Validation Errors
 # =============================================================================
 
+
 class ValidationError(UnifiedThemingError):
     """Raised when validation fails."""
 
-    def __init__(self, message: str, validation_errors: Optional[List[str]] = None,
-                 details: Optional[str] = None):
+    def __init__(
+        self,
+        message: str,
+        validation_errors: Optional[List[str]] = None,
+        details: Optional[str] = None,
+    ):
         """
         Initialize exception.
 
@@ -456,8 +490,10 @@ class ColorValidationError(ValidationError):
             color_value: Invalid color value
             reason: Why the color value is invalid
         """
-        message = (f"Invalid color value for '{color_variable}': "
-                   f"'{color_value}' - {reason}")
+        message = (
+            f"Invalid color value for '{color_variable}': "
+            f"'{color_value}' - {reason}"
+        )
 
         super().__init__(message)
         self.color_variable = color_variable
@@ -484,6 +520,7 @@ class CSSValidationError(ValidationError):
 # =============================================================================
 # System Integration Errors
 # =============================================================================
+
 
 class GSettingsError(UnifiedThemingError):
     """Raised when GSettings operation fails."""
@@ -530,6 +567,7 @@ class SubprocessError(UnifiedThemingError):
 # =============================================================================
 # Utility Functions
 # =============================================================================
+
 
 def format_exception_chain(exception: Exception) -> str:
     """

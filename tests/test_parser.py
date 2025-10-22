@@ -1,9 +1,10 @@
 """
 Tests for Unified Theme Parser.
 """
+
 import pytest
-from pathlib import Path
-from unified_theming.core.parser import UnifiedThemeParser
+
+
 from unified_theming.core.types import Toolkit
 
 
@@ -11,9 +12,9 @@ def test_discover_themes(parser, tmp_theme_dir, valid_theme):
     """Test theme discovery."""
     # Add the temp directory to the parser's search paths
     parser.theme_directories = [tmp_theme_dir.parent]
-    
+
     themes = parser.discover_themes()
-    
+
     assert "ValidTheme" in themes
     assert themes["ValidTheme"].name == "ValidTheme"
 

@@ -6,29 +6,30 @@ console and file logging, colored output, and proper formatting.
 """
 
 import logging
+import os
 import sys
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Optional
-from logging.handlers import RotatingFileHandler
-import os
 
 
 # ANSI color codes for console output
 class LogColors:
     """ANSI color codes for terminal output."""
-    RESET = '\033[0m'
-    BOLD = '\033[1m'
+
+    RESET = "\033[0m"
+    BOLD = "\033[1m"
 
     # Levels
-    DEBUG = '\033[36m'      # Cyan
-    INFO = '\033[32m'       # Green
-    WARNING = '\033[33m'    # Yellow
-    ERROR = '\033[31m'      # Red
-    CRITICAL = '\033[35m'   # Magenta
+    DEBUG = "\033[36m"  # Cyan
+    INFO = "\033[32m"  # Green
+    WARNING = "\033[33m"  # Yellow
+    ERROR = "\033[31m"  # Red
+    CRITICAL = "\033[35m"  # Magenta
 
     # Components
-    TIME = '\033[90m'       # Gray
-    MODULE = '\033[94m'     # Blue
+    TIME = "\033[90m"  # Gray
+    MODULE = "\033[94m"  # Blue
 
 
 class ColoredFormatter(logging.Formatter):
@@ -46,8 +47,12 @@ class ColoredFormatter(logging.Formatter):
         logging.CRITICAL: LogColors.CRITICAL,
     }
 
-    def __init__(self, fmt: Optional[str] = None, datefmt: Optional[str] = None,
-                 use_colors: bool = True):
+    def __init__(
+        self,
+        fmt: Optional[str] = None,
+        datefmt: Optional[str] = None,
+        use_colors: bool = True,
+    ):
         """
         Initialize formatter.
 
@@ -60,7 +65,7 @@ class ColoredFormatter(logging.Formatter):
 
         # Auto-detect if we should use colors
         if use_colors is None:
-            use_colors = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
+            use_colors = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
 
         self.use_colors = use_colors
 
@@ -75,7 +80,7 @@ class ColoredFormatter(logging.Formatter):
         msg = record.getMessage()
 
         # Add colors
-        level_color = self.LEVEL_COLORS.get(record.levelno, '')
+        level_color = self.LEVEL_COLORS.get(record.levelno, "")
         record.levelname = f"{level_color}{levelname}{LogColors.RESET}"
         record.name = f"{LogColors.MODULE}{name}{LogColors.RESET}"
 
@@ -97,11 +102,11 @@ def get_log_directory() -> Path:
         Path to log directory (creates if doesn't exist)
     """
     # Use XDG_STATE_HOME if available, otherwise ~/.local/state
-    state_home = os.getenv('XDG_STATE_HOME')
+    state_home = os.getenv("XDG_STATE_HOME")
     if state_home:
-        log_dir = Path(state_home) / 'unified-theming'
+        log_dir = Path(state_home) / "unified-theming"
     else:
-        log_dir = Path.home() / '.local' / 'state' / 'unified-theming'
+        log_dir = Path.home() / ".local" / "state" / "unified-theming"
 
     log_dir.mkdir(parents=True, exist_ok=True)
     return log_dir
@@ -114,7 +119,7 @@ def setup_logging(
     file_output: bool = True,
     colored_output: Optional[bool] = None,
     max_file_size: int = 10 * 1024 * 1024,  # 10 MB
-    backup_count: int = 3
+    backup_count: int = 3,
 ) -> logging.Logger:
     """
     Configure application-wide logging.
@@ -139,7 +144,7 @@ def setup_logging(
         [2025-10-20 10:30:45] [INFO] [unified_theming] Application started
     """
     # Get root logger for our application
-    logger = logging.getLogger('unified_theming')
+    logger = logging.getLogger("unified_theming")
     logger.setLevel(getattr(logging, log_level.upper()))
 
     # Remove existing handlers to avoid duplicates
@@ -150,13 +155,9 @@ def setup_logging(
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setLevel(logging.INFO)
 
-        console_format = (
-            '[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s'
-        )
+        console_format = "[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s"
         console_formatter = ColoredFormatter(
-            console_format,
-            datefmt='%Y-%m-%d %H:%M:%S',
-            use_colors=colored_output
+            console_format, datefmt="%Y-%m-%d %H:%M:%S", use_colors=colored_output
         )
         console_handler.setFormatter(console_formatter)
         logger.addHandler(console_handler)
@@ -165,23 +166,18 @@ def setup_logging(
     if file_output:
         if log_file is None:
             log_dir = get_log_directory()
-            log_file = log_dir / 'unified-theming.log'
+            log_file = log_dir / "unified-theming.log"
 
         file_handler = RotatingFileHandler(
-            log_file,
-            maxBytes=max_file_size,
-            backupCount=backup_count
+            log_file, maxBytes=max_file_size, backupCount=backup_count
         )
         file_handler.setLevel(logging.DEBUG)
 
         file_format = (
-            '[%(asctime)s] [%(levelname)s] [%(name)s] '
-            '[%(module)s:%(funcName)s:%(lineno)d] %(message)s'
+            "[%(asctime)s] [%(levelname)s] [%(name)s] "
+            "[%(module)s:%(funcName)s:%(lineno)d] %(message)s"
         )
-        file_formatter = logging.Formatter(
-            file_format,
-            datefmt='%Y-%m-%d %H:%M:%S'
-        )
+        file_formatter = logging.Formatter(file_format, datefmt="%Y-%m-%d %H:%M:%S")
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
 
@@ -210,14 +206,15 @@ def get_logger(name: str) -> logging.Logger:
         >>> logger.debug("Parsing theme file")
     """
     # Ensure name starts with our application namespace
-    if not name.startswith('unified_theming'):
-        name = f'unified_theming.{name}'
+    if not name.startswith("unified_theming"):
+        name = f"unified_theming.{name}"
 
     return logging.getLogger(name)
 
 
-def log_exception(logger: logging.Logger, exception: Exception,
-                  message: str = "An error occurred"):
+def log_exception(
+    logger: logging.Logger, exception: Exception, message: str = "An error occurred"
+):
     """
     Log an exception with full traceback.
 
@@ -245,7 +242,7 @@ def set_log_level(level: str):
     Example:
         >>> set_log_level("DEBUG")  # Enable verbose logging
     """
-    logger = logging.getLogger('unified_theming')
+    logger = logging.getLogger("unified_theming")
     logger.setLevel(getattr(logging, level.upper()))
     logger.info(f"Log level changed to {level}")
 
@@ -341,15 +338,15 @@ Best Practices:
 
 
 # Pre-configured logger for quick imports
-default_logger = logging.getLogger('unified_theming')
+default_logger = logging.getLogger("unified_theming")
 
 # Convenience exports
 __all__ = [
-    'setup_logging',
-    'get_logger',
-    'log_exception',
-    'set_log_level',
-    'LogColors',
-    'ColoredFormatter',
-    'default_logger',
+    "setup_logging",
+    "get_logger",
+    "log_exception",
+    "set_log_level",
+    "LogColors",
+    "ColoredFormatter",
+    "default_logger",
 ]

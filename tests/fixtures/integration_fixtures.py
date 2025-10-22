@@ -7,23 +7,29 @@ All fixtures are isolated, reusable, and use realistic data.
 Author: Claude Code (Strategic Architect)
 Date: October 22, 2025
 """
-import pytest
-from pathlib import Path
-from unittest.mock import Mock, MagicMock
+
 from datetime import datetime
-from typing import Dict, Any
+from pathlib import Path
+from typing import Dict
+from unittest.mock import Mock
 
-from unified_theming.core.types import (
-    ThemeInfo, ThemeData, Toolkit,
-    ValidationResult, ValidationLevel, ValidationMessage
-)
-from unified_theming.core.manager import UnifiedThemeManager
+import pytest
+
 from unified_theming.core.config import ConfigManager
-
+from unified_theming.core.manager import UnifiedThemeManager
+from unified_theming.core.types import (
+    ThemeData,
+    ThemeInfo,
+    Toolkit,
+    ValidationLevel,
+    ValidationMessage,
+    ValidationResult,
+)
 
 # ============================================================================
 # FILE SYSTEM FIXTURES
 # ============================================================================
+
 
 @pytest.fixture
 def mock_file_system(tmp_path, monkeypatch):
@@ -80,20 +86,21 @@ def mock_file_system(tmp_path, monkeypatch):
     monkeypatch.setattr(Path, "expanduser", mock_expanduser)
 
     return {
-        'home': home,
-        'config': config,
-        'themes': themes,
-        'local_share': local_share,
-        'gtk3_config': config / "gtk-3.0",
-        'gtk4_config': config / "gtk-4.0",
-        'flatpak_overrides': local_share / "flatpak" / "overrides",
-        'backups': config / "unified-theming" / "backups"
+        "home": home,
+        "config": config,
+        "themes": themes,
+        "local_share": local_share,
+        "gtk3_config": config / "gtk-3.0",
+        "gtk4_config": config / "gtk-4.0",
+        "flatpak_overrides": local_share / "flatpak" / "overrides",
+        "backups": config / "unified-theming" / "backups",
     }
 
 
 # ============================================================================
 # THEME DATA FIXTURES
 # ============================================================================
+
 
 @pytest.fixture
 def mock_theme_adwaita_dark(mock_file_system):
@@ -114,7 +121,7 @@ def mock_theme_adwaita_dark(mock_file_system):
     Returns:
         ThemeInfo object for Adwaita-dark
     """
-    themes_dir = mock_file_system['themes']
+    themes_dir = mock_file_system["themes"]
     theme_path = themes_dir / "Adwaita-dark"
     theme_path.mkdir(parents=True)
 
@@ -176,22 +183,22 @@ gtk-icon-theme-name="Adwaita"
         path=theme_path,
         supported_toolkits=[Toolkit.GTK2, Toolkit.GTK3, Toolkit.GTK4],
         metadata={
-            'GtkTheme': 'Adwaita-dark',
-            'IconTheme': 'Adwaita',
-            'CursorTheme': 'Adwaita',
-            'display_name': 'Adwaita Dark',
-            'comment': 'Dark variant of Adwaita theme'
+            "GtkTheme": "Adwaita-dark",
+            "IconTheme": "Adwaita",
+            "CursorTheme": "Adwaita",
+            "display_name": "Adwaita Dark",
+            "comment": "Dark variant of Adwaita theme",
         },
         colors={
-            'theme_bg_color': '#303030',
-            'theme_fg_color': '#ffffff',
-            'theme_selected_bg_color': '#3584e4',
-            'theme_selected_fg_color': '#ffffff',
-            'borders': '#1c1c1c',
-            'accent_bg_color': '#3584e4',
-            'accent_fg_color': '#ffffff',
-            'window_bg_color': '#303030'
-        }
+            "theme_bg_color": "#303030",
+            "theme_fg_color": "#ffffff",
+            "theme_selected_bg_color": "#3584e4",
+            "theme_selected_fg_color": "#ffffff",
+            "borders": "#1c1c1c",
+            "accent_bg_color": "#3584e4",
+            "accent_fg_color": "#ffffff",
+            "window_bg_color": "#303030",
+        },
     )
 
 
@@ -205,7 +212,7 @@ def mock_theme_nordic(mock_file_system):
     Returns:
         ThemeInfo object for Nordic
     """
-    themes_dir = mock_file_system['themes']
+    themes_dir = mock_file_system["themes"]
     theme_path = themes_dir / "Nordic"
     theme_path.mkdir(parents=True)
 
@@ -247,20 +254,20 @@ IconTheme=Nordic
         path=theme_path,
         supported_toolkits=[Toolkit.GTK3, Toolkit.GTK4],
         metadata={
-            'GtkTheme': 'Nordic',
-            'display_name': 'Nordic',
-            'comment': 'Nordic dark theme'
+            "GtkTheme": "Nordic",
+            "display_name": "Nordic",
+            "comment": "Nordic dark theme",
         },
         colors={
-            'theme_bg_color': '#2e3440',
-            'theme_fg_color': '#d8dee9',
-            'theme_selected_bg_color': '#88c0d0',
-            'theme_selected_fg_color': '#2e3440',
-            'borders': '#3b4252',
-            'accent_bg_color': '#5e81ac',
-            'accent_fg_color': '#eceff4',
-            'window_bg_color': '#2e3440'
-        }
+            "theme_bg_color": "#2e3440",
+            "theme_fg_color": "#d8dee9",
+            "theme_selected_bg_color": "#88c0d0",
+            "theme_selected_fg_color": "#2e3440",
+            "borders": "#3b4252",
+            "accent_bg_color": "#5e81ac",
+            "accent_fg_color": "#eceff4",
+            "window_bg_color": "#2e3440",
+        },
     )
 
 
@@ -277,7 +284,7 @@ def mock_theme_incomplete(mock_file_system):
     Returns:
         ThemeInfo object for IncompleteTheme
     """
-    themes_dir = mock_file_system['themes']
+    themes_dir = mock_file_system["themes"]
     theme_path = themes_dir / "IncompleteTheme"
     theme_path.mkdir(parents=True)
 
@@ -304,20 +311,21 @@ Comment=Incomplete theme for testing
         path=theme_path,
         supported_toolkits=[Toolkit.GTK3],  # Missing GTK4, Qt
         metadata={
-            'display_name': 'Incomplete Theme',
-            'comment': 'Incomplete theme for testing'
+            "display_name": "Incomplete Theme",
+            "comment": "Incomplete theme for testing",
         },
         colors={
-            'theme_bg_color': '#cccccc',
-            'theme_fg_color': '#000000'
+            "theme_bg_color": "#cccccc",
+            "theme_fg_color": "#000000",
             # Missing colors: theme_selected_bg_color, borders, etc.
-        }
+        },
     )
 
 
 # ============================================================================
 # SUBPROCESS MOCKING
 # ============================================================================
+
 
 @pytest.fixture
 def mock_subprocess_run(monkeypatch):
@@ -343,15 +351,9 @@ def mock_subprocess_run(monkeypatch):
     """
     import subprocess
 
-    mock_run = Mock(
-        return_value=Mock(
-            returncode=0,
-            stdout="",
-            stderr=""
-        )
-    )
+    mock_run = Mock(return_value=Mock(returncode=0, stdout="", stderr=""))
 
-    monkeypatch.setattr(subprocess, 'run', mock_run)
+    monkeypatch.setattr(subprocess, "run", mock_run)
 
     return mock_run
 
@@ -359,6 +361,7 @@ def mock_subprocess_run(monkeypatch):
 # ============================================================================
 # MANAGER AND CONFIG FIXTURES
 # ============================================================================
+
 
 @pytest.fixture
 def mock_manager(mock_file_system, mock_subprocess_run):
@@ -377,16 +380,16 @@ def mock_manager(mock_file_system, mock_subprocess_run):
         UnifiedThemeManager instance
     """
     from unified_theming.core.parser import UnifiedThemeParser
-    
+
     # Create config path in the mocked filesystem
-    config_path = mock_file_system['config'] / "unified-theming"
-    
+    config_path = mock_file_system["config"] / "unified-theming"
+
     # Create manager instance
     manager = UnifiedThemeManager(config_path=config_path)
-    
+
     # Update parser to look in the mocked theme directories
     theme_directories = [
-        mock_file_system['themes']  # This is where our mock themes are created
+        mock_file_system["themes"]  # This is where our mock themes are created
     ]
     manager.parser = UnifiedThemeParser(theme_directories=theme_directories)
 
@@ -408,7 +411,7 @@ def mock_config_manager(mock_file_system):
     Returns:
         ConfigManager instance
     """
-    config_path = mock_file_system['config'] / "unified-theming"
+    config_path = mock_file_system["config"] / "unified-theming"
     return ConfigManager(config_path=config_path)
 
 
@@ -416,12 +419,10 @@ def mock_config_manager(mock_file_system):
 # THEME REPOSITORY FIXTURES
 # ============================================================================
 
+
 @pytest.fixture
 def integration_test_theme_repository(
-    mock_file_system,
-    mock_theme_adwaita_dark,
-    mock_theme_nordic,
-    mock_theme_incomplete
+    mock_file_system, mock_theme_adwaita_dark, mock_theme_nordic, mock_theme_incomplete
 ):
     """
     Complete theme repository with multiple themes.
@@ -441,15 +442,16 @@ def integration_test_theme_repository(
         Dict mapping theme names to ThemeInfo objects
     """
     return {
-        'Adwaita-dark': mock_theme_adwaita_dark,
-        'Nordic': mock_theme_nordic,
-        'IncompleteTheme': mock_theme_incomplete
+        "Adwaita-dark": mock_theme_adwaita_dark,
+        "Nordic": mock_theme_nordic,
+        "IncompleteTheme": mock_theme_incomplete,
     }
 
 
 # ============================================================================
 # VALIDATION FIXTURES
 # ============================================================================
+
 
 @pytest.fixture
 def sample_validation_result():
@@ -466,21 +468,22 @@ def sample_validation_result():
                 level=ValidationLevel.WARNING,
                 message="Missing GTK4 theme files",
                 component="parser",
-                details="GTK4 support incomplete"
+                details="GTK4 support incomplete",
             ),
             ValidationMessage(
                 level=ValidationLevel.ERROR,
                 message="No color definitions found",
                 component="parser",
-                details="Theme parsing failed"
-            )
-        ]
+                details="Theme parsing failed",
+            ),
+        ],
     )
 
 
 # ============================================================================
 # UTILITY FIXTURES
 # ============================================================================
+
 
 @pytest.fixture
 def file_comparison_utility():
@@ -495,6 +498,7 @@ def file_comparison_utility():
     Returns:
         Dict with utility functions
     """
+
     def compare_files(path1: Path, path2: Path) -> bool:
         """Compare two files byte-for-byte."""
         if not (path1.exists() and path2.exists()):
@@ -514,15 +518,16 @@ def file_comparison_utility():
         return len(list(directory.glob(pattern)))
 
     return {
-        'compare_files': compare_files,
-        'verify_backup_contains_file': verify_backup_contains_file,
-        'count_files': count_files_in_directory
+        "compare_files": compare_files,
+        "verify_backup_contains_file": verify_backup_contains_file,
+        "count_files": count_files_in_directory,
     }
 
 
 # ============================================================================
 # PYTEST CONFIGURATION
 # ============================================================================
+
 
 def pytest_configure(config):
     """
@@ -532,17 +537,14 @@ def pytest_configure(config):
     - integration: Marks integration tests
     - slow: Marks slow tests (can be skipped with -m "not slow")
     """
-    config.addinivalue_line(
-        "markers", "integration: mark test as integration test"
-    )
-    config.addinivalue_line(
-        "markers", "slow: mark test as slow running"
-    )
+    config.addinivalue_line("markers", "integration: mark test as integration test")
+    config.addinivalue_line("markers", "slow: mark test as slow running")
 
 
 # ============================================================================
 # FIXTURE CLEANUP
 # ============================================================================
+
 
 @pytest.fixture(autouse=True)
 def cleanup_after_test(mock_file_system):

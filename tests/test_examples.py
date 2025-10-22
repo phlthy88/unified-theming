@@ -2,10 +2,11 @@
 Tests for example files and GUI prototype validation.
 """
 
-import pytest
 import subprocess
 import sys
 from pathlib import Path
+
+import pytest
 
 
 def test_gui_prototype_syntax():
@@ -20,18 +21,22 @@ def test_gui_prototype_imports():
     # Temporarily add project root to path
     import sys
     from pathlib import Path
+
     project_root = Path(__file__).parent.parent
     sys.path.insert(0, str(project_root))
 
     # Import and validate
     import unified_theming.core.manager
-    from unified_theming.core.types import PlanResult  # type: ignore
-    assert hasattr(unified_theming.core.manager.UnifiedThemeManager, 'plan_changes')
+
+    # type: ignore
+
+    assert hasattr(unified_theming.core.manager.UnifiedThemeManager, "plan_changes")
 
 
 def test_gui_prototype_structure():
     """Validate GUI prototype has expected structure."""
     from pathlib import Path
+
     gui_path = Path(__file__).parent.parent / "examples" / "gui_prototype.py"
 
     # Read the file and check for expected content
@@ -42,8 +47,14 @@ def test_gui_prototype_structure():
 
     # Check for required imports
     assert "import gi" in content
-    assert 'gi.require_version("Gtk", "4.0")' in content or "gi.require_version('Gtk', '4.0')" in content
-    assert 'gi.require_version("Adw", "1")' in content or "gi.require_version('Adw', '1')" in content
+    assert (
+        'gi.require_version("Gtk", "4.0")' in content
+        or "gi.require_version('Gtk', '4.0')" in content
+    )
+    assert (
+        'gi.require_version("Adw", "1")' in content
+        or "gi.require_version('Adw', '1')" in content
+    )
 
     # Check for class definition
     assert "class ThemeAppPrototype(Adw.Application):" in content
@@ -57,18 +68,23 @@ def test_gui_prototype_structure():
 def test_gui_prototype_dependencies_documented():
     """Validate that GUI dependencies are properly documented."""
     from pathlib import Path
+
     gui_path = Path(__file__).parent.parent / "examples" / "gui_prototype.py"
 
     content = gui_path.read_text()
 
     # Check for dependency documentation in developer notes
-    assert "Dependencies: Requires Python 3.10+, GTK 4.10+, Libadwaita 1.0+, PyGObject" in content
+    assert (
+        "Dependencies: Requires Python 3.10+, GTK 4.10+, Libadwaita 1.0+, PyGObject"
+        in content
+    )
     assert "Install PyGObject with: pip install PyGObject" in content
 
 
 def test_gui_prototype_cli_path_handling():
     """Validate GUI prototype handles CLI path correctly."""
     from pathlib import Path
+
     gui_path = Path(__file__).parent.parent / "examples" / "gui_prototype.py"
 
     content = gui_path.read_text()
@@ -81,6 +97,7 @@ def test_gui_prototype_cli_path_handling():
 def test_gui_prototype_threading():
     """Validate GUI prototype uses proper threading."""
     from pathlib import Path
+
     gui_path = Path(__file__).parent.parent / "examples" / "gui_prototype.py"
 
     content = gui_path.read_text()
@@ -95,6 +112,7 @@ def test_gui_prototype_threading():
 def test_gui_prototype_error_handling():
     """Validate GUI prototype has error handling."""
     from pathlib import Path
+
     gui_path = Path(__file__).parent.parent / "examples" / "gui_prototype.py"
 
     content = gui_path.read_text()

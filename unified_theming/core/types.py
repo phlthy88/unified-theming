@@ -6,10 +6,10 @@ used throughout the application.
 """
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Any, TYPE_CHECKING
-from datetime import datetime
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 if TYPE_CHECKING:
     from ..handlers.base import BaseHandler
@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 class Toolkit(Enum):
     """Supported GUI toolkits."""
+
     GTK2 = "gtk2"
     GTK3 = "gtk3"
     GTK4 = "gtk4"
@@ -29,18 +30,20 @@ class Toolkit(Enum):
 
 class ValidationLevel(Enum):
     """Validation result severity levels."""
-    ERROR = "error"      # Cannot use theme
+
+    ERROR = "error"  # Cannot use theme
     WARNING = "warning"  # May have issues
-    INFO = "info"        # Informational only
+    INFO = "info"  # Informational only
 
 
 class ColorFormat(Enum):
     """Color representation formats."""
-    HEX = "hex"          # #RRGGBB or #RRGGBBAA
-    RGB = "rgb"          # rgb(r, g, b)
-    RGBA = "rgba"        # rgba(r, g, b, a)
-    HSL = "hsl"          # hsl(h, s, l)
-    NAMED = "named"      # Color name (e.g., "red")
+
+    HEX = "hex"  # #RRGGBB or #RRGGBBAA
+    RGB = "rgb"  # rgb(r, g, b)
+    RGBA = "rgba"  # rgba(r, g, b, a)
+    HSL = "hsl"  # hsl(h, s, l)
+    NAMED = "named"  # Color name (e.g., "red")
 
 
 @dataclass
@@ -72,7 +75,7 @@ class ThemeInfo:
     - has_dark_variant: bool
     """
 
-    validation_result: Optional['ValidationResult'] = None
+    validation_result: Optional["ValidationResult"] = None
     """Result of theme validation (if validated)."""
 
     def has_toolkit_support(self, toolkit: Toolkit) -> bool:
@@ -121,36 +124,54 @@ class ValidationResult:
     messages: List[ValidationMessage] = field(default_factory=list)
     """List of validation messages."""
 
-    def add_error(self, message: str, component: Optional[str] = None,
-                  details: Optional[str] = None) -> None:
+    def add_error(
+        self,
+        message: str,
+        component: Optional[str] = None,
+        details: Optional[str] = None,
+    ) -> None:
         """Add an error message."""
-        self.messages.append(ValidationMessage(
-            level=ValidationLevel.ERROR,
-            message=message,
-            component=component,
-            details=details
-        ))
+        self.messages.append(
+            ValidationMessage(
+                level=ValidationLevel.ERROR,
+                message=message,
+                component=component,
+                details=details,
+            )
+        )
         self.valid = False
 
-    def add_warning(self, message: str, component: Optional[str] = None,
-                    details: Optional[str] = None) -> None:
+    def add_warning(
+        self,
+        message: str,
+        component: Optional[str] = None,
+        details: Optional[str] = None,
+    ) -> None:
         """Add a warning message."""
-        self.messages.append(ValidationMessage(
-            level=ValidationLevel.WARNING,
-            message=message,
-            component=component,
-            details=details
-        ))
+        self.messages.append(
+            ValidationMessage(
+                level=ValidationLevel.WARNING,
+                message=message,
+                component=component,
+                details=details,
+            )
+        )
 
-    def add_info(self, message: str, component: Optional[str] = None,
-                 details: Optional[str] = None) -> None:
+    def add_info(
+        self,
+        message: str,
+        component: Optional[str] = None,
+        details: Optional[str] = None,
+    ) -> None:
         """Add an informational message."""
-        self.messages.append(ValidationMessage(
-            level=ValidationLevel.INFO,
-            message=message,
-            component=component,
-            details=details
-        ))
+        self.messages.append(
+            ValidationMessage(
+                level=ValidationLevel.INFO,
+                message=message,
+                component=component,
+                details=details,
+            )
+        )
 
     def has_errors(self) -> bool:
         """Check if there are any error messages."""
@@ -247,13 +268,13 @@ class ApplicationResult:
 
     def get_successful_handlers(self) -> List[str]:
         """Get list of handler names that succeeded."""
-        return [name for name, result in self.handler_results.items()
-                if result.success]
+        return [name for name, result in self.handler_results.items() if result.success]
 
     def get_failed_handlers(self) -> List[str]:
         """Get list of handler names that failed."""
-        return [name for name, result in self.handler_results.items()
-                if not result.success]
+        return [
+            name for name, result in self.handler_results.items() if not result.success
+        ]
 
     def has_failures(self) -> bool:
         """Check if any handlers failed."""
@@ -302,8 +323,10 @@ class Backup:
 
     def __str__(self) -> str:
         """Format backup for display."""
-        return (f"Backup {self.backup_id}: {self.theme_name} "
-                f"({self.timestamp.strftime('%Y-%m-%d %H:%M:%S')})")
+        return (
+            f"Backup {self.backup_id}: {self.theme_name} "
+            f"({self.timestamp.strftime('%Y-%m-%d %H:%M:%S')})"
+        )
 
 
 @dataclass
@@ -364,9 +387,9 @@ class PlanResult:
 
     def __post_init__(self):
         """Calculate derived fields."""
-        self.estimated_files_affected = len(set(
-            change.file_path for change in self.planned_changes
-        ))
+        self.estimated_files_affected = len(
+            set(change.file_path for change in self.planned_changes)
+        )
 
     def get_changes_by_handler(self, handler_name: str) -> List[PlannedChange]:
         """Get all planned changes for a specific handler."""
@@ -405,7 +428,7 @@ ThemeDict = Dict[str, ThemeInfo]
 ColorPalette = Dict[str, str]
 """Dictionary mapping color variable names to color values."""
 
-HandlerDict = Dict[str, 'BaseHandler']
+HandlerDict = Dict[str, "BaseHandler"]
 """Dictionary mapping handler names to handler instances."""
 
 
@@ -416,24 +439,19 @@ GTK_COLOR_VARIABLES = [
     "theme_fg_color",
     "theme_base_color",
     "theme_text_color",
-
     # Selection
     "theme_selected_bg_color",
     "theme_selected_fg_color",
-
     # Borders and shadows
     "borders",
     "shadow",
-
     # Special states
     "insensitive_bg_color",
     "insensitive_fg_color",
     "insensitive_base_color",
-
     # Links
     "link_color",
     "visited_link_color",
-
     # Semantic colors
     "success_color",
     "warning_color",
@@ -444,62 +462,50 @@ LIBADWAITA_COLOR_VARIABLES = [
     # Window colors
     "window_bg_color",
     "window_fg_color",
-
     # View colors
     "view_bg_color",
     "view_fg_color",
-
     # Accent colors
     "accent_bg_color",
     "accent_fg_color",
     "accent_color",
-
     # Destructive colors
     "destructive_bg_color",
     "destructive_fg_color",
     "destructive_color",
-
     # Success colors
     "success_bg_color",
     "success_fg_color",
     "success_color",
-
     # Warning colors
     "warning_bg_color",
     "warning_fg_color",
     "warning_color",
-
     # Error colors
     "error_bg_color",
     "error_fg_color",
     "error_color",
-
     # Header bar
     "headerbar_bg_color",
     "headerbar_fg_color",
     "headerbar_border_color",
     "headerbar_backdrop_color",
     "headerbar_shade_color",
-
     # Sidebar
     "sidebar_bg_color",
     "sidebar_fg_color",
     "sidebar_backdrop_color",
     "sidebar_shade_color",
-
     # Cards
     "card_bg_color",
     "card_fg_color",
     "card_shade_color",
-
     # Popovers
     "popover_bg_color",
     "popover_fg_color",
-
     # Dialogs
     "dialog_bg_color",
     "dialog_fg_color",
-
     # Thumbnails
     "thumbnail_bg_color",
     "thumbnail_fg_color",

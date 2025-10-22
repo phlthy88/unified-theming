@@ -4,23 +4,26 @@ Tests for color utility functions in unified_theming.utils.color.
 This module tests the color format normalization, translation, validation,
 and contrast calculation functions according to the Week 1 test plan.
 """
-import pytest
+
 from unittest.mock import Mock, patch
+
+import pytest
+
+from unified_theming.core.exceptions import ColorValidationError
+from unified_theming.core.types import ColorFormat
 from unified_theming.utils.color import (
-    validate_color_format,
-    normalize_color_format,
     _to_hex,
-    _to_rgb,
-    _to_rgba,
     _to_hsl,
     _to_named,
-    hsl_to_rgb,
-    rgb_to_hsl,
+    _to_rgb,
+    _to_rgba,
+    gtk_color_to_qt_format,
     gtk_to_qt_colors,
-    gtk_color_to_qt_format
+    hsl_to_rgb,
+    normalize_color_format,
+    rgb_to_hsl,
+    validate_color_format,
 )
-from unified_theming.core.types import ColorFormat
-from unified_theming.core.exceptions import ColorValidationError
 
 
 # Fixtures for common test data
@@ -133,7 +136,10 @@ def test_normalize_color_hsl_to_rgb(sample_colors):
     result = normalize_color_format(sample_colors["hsl"], ColorFormat.RGB)
 
     # The HSL (9, 100%, 60%) should convert to approximately RGB(255, 82, 51) based on implementation
-    assert result in ["rgb(255, 82, 51)", "rgb(255, 87, 51)"]  # Allow for precision differences
+    assert result in [
+        "rgb(255, 82, 51)",
+        "rgb(255, 87, 51)",
+    ]  # Allow for precision differences
     assert isinstance(result, str)
 
 
@@ -206,7 +212,7 @@ def test_validate_color_valid_rgba(sample_colors):
 def test_get_derived_color_lighten():
     """
     Test get_derived_color with 'lighten' operation.
-    
+
     Note: This function doesn't exist in the current color.py implementation.
     The test plan mentions get_derived_color, but it's not in the file.
     We'll create a separate test for the existing derived color functions
@@ -217,7 +223,7 @@ def test_get_derived_color_lighten():
 def test_get_derived_color_darken():
     """
     Test get_derived_color with 'darken' operation.
-    
+
     Note: This function doesn't exist in the current color.py implementation.
     The test plan mentions get_derived_color, but it's not in the file.
     We'll create a separate test for the existing derived color functions
@@ -228,7 +234,7 @@ def test_get_derived_color_darken():
 def test_get_derived_color_invalid_operation():
     """
     Test get_derived_color with invalid operation.
-    
+
     Note: This function doesn't exist in the current color.py implementation.
     The test plan mentions get_derived_color, but it's not in the file.
     We'll create a separate test for the existing derived color functions
@@ -240,7 +246,7 @@ def test_get_derived_color_invalid_operation():
 def test_calculate_contrast():
     """
     Test calculate_contrast function.
-    
+
     Note: This function doesn't exist in the current color.py implementation.
     The test plan mentions calculate_contrast, but it's not in the file.
     We'll create a separate test for contrast calculation if needed.
@@ -251,7 +257,7 @@ def test_calculate_contrast():
 def test_parse_gtk_color():
     """
     Test parse_gtk_color function.
-    
+
     Note: This function doesn't exist in the current color.py implementation.
     The test plan mentions parse_gtk_color, but it's not in the file.
     We'll create a separate test for GTK color parsing if needed.
@@ -267,7 +273,9 @@ def test_normalize_color_with_whitespace():
     """
     result = normalize_color_format("  #FF5733  ", ColorFormat.HEX)
 
-    assert result == "#FF5733"  # From updated function implementation, result is uppercase
+    assert (
+        result == "#FF5733"
+    )  # From updated function implementation, result is uppercase
 
 
 def test_normalize_color_case_insensitivity():
@@ -291,7 +299,9 @@ def test_normalize_color_alpha_channel_zero():
     """
     result = normalize_color_format("rgba(255, 87, 51, 0.0)", ColorFormat.HEX)
 
-    assert result == "#FF5733"  # Alpha is discarded when converting to hex, now uppercase
+    assert (
+        result == "#FF5733"
+    )  # Alpha is discarded when converting to hex, now uppercase
 
 
 def test_normalize_color_negative_rgb():
@@ -304,7 +314,9 @@ def test_normalize_color_negative_rgb():
         normalize_color_format("rgb(-10, 87, 51)", ColorFormat.HEX)
 
 
-@pytest.mark.skip(reason="Percentage RGB (TC-C-030) not implemented - not required for v0.5")
+@pytest.mark.skip(
+    reason="Percentage RGB (TC-C-030) not implemented - not required for v0.5"
+)
 def test_normalize_color_percentage_rgb():
     """
     Test normalize_color_format with percentage RGB.
@@ -321,35 +333,35 @@ def test_normalize_color_percentage_rgb():
 def test_to_hex_hex_format():
     """Test _to_hex with hex format input."""
     result = _to_hex("#FF5733")
-    
+
     assert result == "#FF5733"
 
 
 def test_to_hex_hex3_format():
     """Test _to_hex with 3-digit hex format input."""
     result = _to_hex("#F57")
-    
+
     assert result == "#FF5577"
 
 
 def test_to_hex_rgb_format():
     """Test _to_hex with RGB format input."""
     result = _to_hex("rgb(255, 87, 51)")
-    
+
     assert result == "#FF5733"  # Updated to uppercase
 
 
 def test_to_hex_rgba_format():
     """Test _to_hex with RGBA format input."""
     result = _to_hex("rgba(255, 87, 51, 0.5)")
-    
+
     assert result == "#FF5733"  # Alpha is discarded, now uppercase
 
 
 def test_to_hex_hsl_format():
     """Test _to_hex with HSL format input."""
     result = _to_hex("hsl(9, 100%, 60%)")
-    
+
     # Allow for small precision differences in HSL->RGB->HEX conversion
     assert result.lower() in ["#ff5733", "#ff5233"]  # Original vs actual conversion
 
@@ -357,64 +369,67 @@ def test_to_hex_hsl_format():
 def test_to_hex_named_color():
     """Test _to_hex with named color input."""
     result = _to_hex("red")
-    
+
     assert result == "#FF0000"  # Updated to uppercase
 
 
 def test_to_rgb_rgb_format():
     """Test _to_rgb with RGB format input."""
     result = _to_rgb("rgb(255, 87, 51)")
-    
+
     assert result == "rgb(255, 87, 51)"
 
 
 def test_to_rgb_rgba_format():
     """Test _to_rgb with RGBA format input."""
     result = _to_rgb("rgba(255, 87, 51, 0.5)")
-    
+
     assert result == "rgb(255, 87, 51)"
 
 
 def test_to_rgb_hex_format():
     """Test _to_rgb with hex format input."""
     result = _to_rgb("#FF5733")
-    
+
     assert result == "rgb(255, 87, 51)"
 
 
 def test_to_rgb_hsl_format():
     """Test _to_rgb with HSL format input."""
     result = _to_rgb("hsl(9, 100%, 60%)")
-    
+
     # Allow for small precision differences in HSL->RGB conversion
-    assert result in ["rgb(255, 87, 51)", "rgb(255, 82, 51)"]  # Original vs actual conversion
+    assert result in [
+        "rgb(255, 87, 51)",
+        "rgb(255, 82, 51)",
+    ]  # Original vs actual conversion
 
 
 def test_to_rgba_rgba_format():
     """Test _to_rgba with RGBA format input."""
     result = _to_rgba("rgba(255, 87, 51, 1.0)")
-    
+
     assert result == "rgba(255, 87, 51, 1.0)"
 
 
 def test_to_rgba_rgb_format():
     """Test _to_rgba with RGB format input."""
     result = _to_rgba("rgb(255, 87, 51)")
-    
+
     assert result == "rgba(255, 87, 51, 1.0)"
 
 
 def test_to_rgba_hex_format():
     """Test _to_rgba with hex format input."""
     result = _to_rgba("#FF5733")
-    
+
     assert result == "rgba(255, 87, 51, 1.0)"
 
 
 def test_to_hsl_hsl_format():
     """Test _to_hsl with HSL format input."""
     result = _to_hsl("hsl(9, 100%, 60%)")
-    
+
     # The result should be the same as input since it's already HSL
     # But due to potential rounding, we'll check the values
     assert result.startswith("hsl(")
@@ -423,23 +438,26 @@ def test_to_hsl_hsl_format():
 def test_to_hsl_hex_format():
     """Test _to_hsl with hex format input."""
     result = _to_hsl("#FF5733")
-    
+
     # Allow for small precision differences in RGB->HSL conversion
     # Expected: hsl(9, 100%, 60%), but we might get hsl(11, 100%, 60%) due to precision
-    assert result in ["hsl(9, 100%, 60%)", "hsl(11, 100%, 60%)"]  # Original vs actual conversion
+    assert result in [
+        "hsl(9, 100%, 60%)",
+        "hsl(11, 100%, 60%)",
+    ]  # Original vs actual conversion
 
 
 def test_to_named_hex_format():
     """Test _to_named with hex format input."""
     result = _to_named("#ff0000")
-    
+
     assert result == "red"
 
 
 def test_hsl_to_rgb_conversion():
     """Test HSL to RGB conversion function."""
     r, g, b = hsl_to_rgb(9, 100, 60)
-    
+
     # Allow for small precision differences in HSL->RGB conversion
     assert r == 255  # Hue should still produce max red
     assert g in [82, 87]  # Allow for precision difference
@@ -449,7 +467,7 @@ def test_hsl_to_rgb_conversion():
 def test_rgb_to_hsl_conversion():
     """Test RGB to HSL conversion function."""
     h, s, l = rgb_to_hsl(255, 87, 51)
-    
+
     # Allow for small precision differences in RGB->HSL conversion
     assert h in [9, 11]  # Allow for precision difference
     assert s in [100, 95]  # Allow for precision difference
@@ -462,11 +480,11 @@ def test_gtk_to_qt_colors():
         "theme_bg_color": "#FFFFFF",
         "theme_fg_color": "#000000",
         "theme_selected_bg_color": "#3584E4",
-        "theme_selected_fg_color": "#FFFFFF"
+        "theme_selected_fg_color": "#FFFFFF",
     }
-    
+
     qt_colors = gtk_to_qt_colors(gtk_colors)
-    
+
     # Check that expected Qt color names are present
     assert "BackgroundNormal" in qt_colors
     assert "ForegroundNormal" in qt_colors
@@ -477,28 +495,28 @@ def test_gtk_to_qt_colors():
 def test_gtk_color_to_qt_format_hex():
     """Test GTK color to Qt format with hex input."""
     result = gtk_color_to_qt_format("#FF5733")
-    
+
     assert result == "255,87,51"
 
 
 def test_gtk_color_to_qt_format_hex3():
     """Test GTK color to Qt format with 3-digit hex input."""
     result = gtk_color_to_qt_format("#F57")
-    
+
     assert result == "255,85,119"
 
 
 def test_gtk_color_to_qt_format_rgb():
     """Test GTK color to Qt format with RGB input."""
     result = gtk_color_to_qt_format("rgb(255, 87, 51)")
-    
+
     assert result == "255,87,51"
 
 
 def test_gtk_color_to_qt_format_rgba():
     """Test GTK color to Qt format with RGBA input."""
     result = gtk_color_to_qt_format("rgba(255, 87, 51, 0.5)")
-    
+
     assert result == "255,87,51"
 
 
@@ -616,6 +634,7 @@ def test_hsl_boundary_values():
 def test_convert_rgb_to_hsl():
     """Test converting RGB format to HSL."""
     from unified_theming.utils.color import _to_hsl
+
     result = _to_hsl("rgb(255, 87, 51)")
     assert result.startswith("hsl(")
     assert result.endswith(")")
@@ -624,6 +643,7 @@ def test_convert_rgb_to_hsl():
 def test_convert_rgba_to_hsl():
     """Test converting RGBA format to HSL (alpha ignored)."""
     from unified_theming.utils.color import _to_hsl
+
     result = _to_hsl("rgba(255, 87, 51, 0.5)")
     assert result.startswith("hsl(")
     assert result.endswith(")")
@@ -632,6 +652,7 @@ def test_convert_rgba_to_hsl():
 def test_convert_named_to_hsl():
     """Test converting named color to HSL."""
     from unified_theming.utils.color import _to_hsl
+
     result = _to_hsl("red")
     assert result.startswith("hsl(")
 
@@ -639,6 +660,7 @@ def test_convert_named_to_hsl():
 def test_to_named_color():
     """Test converting hex to named color."""
     from unified_theming.utils.color import _to_named
+
     # This should return the original since we can't reliably convert arbitrary hex to named
     result = _to_named("#FF5733")
     # The function returns original if no named match
@@ -648,6 +670,7 @@ def test_to_named_color():
 def test_rgb_to_hsl_grayscale():
     """Test RGB to HSL conversion with grayscale (no saturation)."""
     from unified_theming.utils.color import rgb_to_hsl
+
     # Pure gray should have 0 saturation and hue
     h, s, l = rgb_to_hsl(128, 128, 128)
     assert s == 0  # No saturation for gray
@@ -657,6 +680,7 @@ def test_rgb_to_hsl_grayscale():
 def test_rgb_to_hsl_green_dominant():
     """Test RGB to HSL when green is the dominant color."""
     from unified_theming.utils.color import rgb_to_hsl
+
     # Lime green (0, 255, 0)
     h, s, l = rgb_to_hsl(0, 255, 0)
     assert 115 <= h <= 125  # Green hue is around 120
@@ -665,6 +689,7 @@ def test_rgb_to_hsl_green_dominant():
 def test_rgb_to_hsl_blue_dominant():
     """Test RGB to HSL when blue is the dominant color."""
     from unified_theming.utils.color import rgb_to_hsl
+
     # Pure blue (0, 0, 255)
     h, s, l = rgb_to_hsl(0, 0, 255)
     assert 235 <= h <= 245  # Blue hue is around 240

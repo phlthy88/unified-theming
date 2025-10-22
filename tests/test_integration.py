@@ -5,29 +5,18 @@ Tests complete workflows and component interaction.
 Author: Qwen Coder
 Date: October 22, 2025
 """
-import pytest
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-import subprocess
 
-from unified_theming.core.manager import UnifiedThemeManager
-from unified_theming.core.config import ConfigManager
-from unified_theming.core.types import ValidationLevel
+import os
+
 
 # Import fixtures
 import sys
-import os
+
+
+import pytest
+
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from tests.fixtures.integration_fixtures import (
-    mock_file_system,
-    mock_theme_adwaita_dark,
-    mock_theme_nordic,
-    mock_theme_incomplete,
-    mock_subprocess_run,
-    mock_manager,
-    integration_test_theme_repository,
-    file_comparison_utility
-)
 
 
 @pytest.mark.integration
@@ -39,7 +28,7 @@ class TestIntegrationScenarios:
         mock_file_system,
         mock_theme_adwaita_dark,
         mock_subprocess_run,
-        mock_manager
+        mock_manager,
     ):
         """
         IT-001: Happy path - full theme application workflow.
@@ -61,7 +50,7 @@ class TestIntegrationScenarios:
         assert result.theme_name == "Adwaita-dark"
 
         # Step 4: Verify GTK files written
-        home = mock_file_system['home']
+        home = mock_file_system["home"]
 
         # GTK2
         gtk2_config = home / ".gtkrc-2.0"
@@ -73,7 +62,9 @@ class TestIntegrationScenarios:
         gtk3_config = home / ".config/gtk-3.0/settings.ini"
         if gtk3_config.exists():
             gtk3_content = gtk3_config.read_text()
-            assert "Adwaita-dark" in gtk3_content or "adwaita-dark" in gtk3_content.lower()
+            assert (
+                "Adwaita-dark" in gtk3_content or "adwaita-dark" in gtk3_content.lower()
+            )
 
         # GTK4
         gtk4_config = home / ".config/gtk-4.0/gtk.css"
@@ -99,11 +90,7 @@ class TestIntegrationScenarios:
         assert len(result.handler_results) >= 1  # At least one handler succeeded
 
     def test_multi_handler_coordination(
-        self,
-        mock_file_system,
-        mock_theme_nordic,
-        mock_subprocess_run,
-        mock_manager
+        self, mock_file_system, mock_theme_nordic, mock_subprocess_run, mock_manager
     ):
         """
         IT-003: Multi-handler coordination.
@@ -119,15 +106,15 @@ class TestIntegrationScenarios:
         assert "flatpak" in handler_names
 
         # Verify Flatpak handler succeeded (since GTK might fail due to missing gsettings)
-        flatpak_result = result.handler_results.get('flatpak')
+        flatpak_result = result.handler_results.get("flatpak")
         assert flatpak_result is not None
         assert flatpak_result.success == True
 
         # Check overall success (depends on ratio of succeeded/failed handlers)
         # Since Flatpak succeeds and GTK might fail, check that appropriate handlers succeeded
-        
+
         # Verify GTK files (Nordic colors) - if GTK handler was successful
-        home = mock_file_system['home']
+        home = mock_file_system["home"]
         gtk4_css = home / ".config/gtk-4.0/gtk.css"
 
         if gtk4_css.exists():
@@ -145,7 +132,7 @@ class TestIntegrationScenarios:
         mock_theme_nordic,
         mock_subprocess_run,
         mock_manager,
-        file_comparison_utility
+        file_comparison_utility,
     ):
         """
         IT-004: Backup/restore workflow.
@@ -157,7 +144,7 @@ class TestIntegrationScenarios:
         assert result_a.overall_success == True
 
         # Record Theme-A state
-        home = mock_file_system['home']
+        home = mock_file_system["home"]
         gtk3_config = home / ".config/gtk-3.0/settings.ini"
 
         if gtk3_config.exists():
@@ -181,7 +168,9 @@ class TestIntegrationScenarios:
         if gtk3_config.exists():
             nordic_content = gtk3_config.read_text()
             # Verify theme switched
-            assert "nordic" in nordic_content.lower() or "2e3440" in nordic_content.lower()
+            assert (
+                "nordic" in nordic_content.lower() or "2e3440" in nordic_content.lower()
+            )
 
         # Step 4: Restore backup
         restore_success = config_manager.restore_backup(backup_id)
@@ -201,7 +190,7 @@ class TestIntegrationScenarios:
         mock_theme_nordic,
         mock_subprocess_run,
         mock_manager,
-        monkeypatch
+        monkeypatch,
     ):
         """
         IT-002: Error recovery - handler failure with automatic rollback.
@@ -213,7 +202,7 @@ class TestIntegrationScenarios:
         assert result_initial.overall_success == True
 
         # Record initial state
-        home = mock_file_system['home']
+        home = mock_file_system["home"]
         gtk3_config = home / ".config/gtk-3.0/settings.ini"
 
         if gtk3_config.exists():
@@ -225,23 +214,26 @@ class TestIntegrationScenarios:
 
         def mock_apply_failure(self, theme_data):
             """Simulate permission denied error."""
-            raise PermissionError("Permission denied: /home/user/.config/gtk-3.0/settings.ini")
+            raise PermissionError(
+                "Permission denied: /home/user/.config/gtk-3.0/settings.ini"
+            )
 
         # Patch GTKHandler.apply_theme to fail
         with monkeypatch.context() as m:
-            m.setattr(GTKHandler, 'apply_theme', mock_apply_failure)
+            m.setattr(GTKHandler, "apply_theme", mock_apply_failure)
 
             # Step 3: Attempt to apply new theme (should fail)
             result_failed = mock_manager.apply_theme("Nordic")
 
             # Verify that GTK handler reported failure
-            gtk_result = result_failed.handler_results.get('gtk')
+            gtk_result = result_failed.handler_results.get("gtk")
             assert gtk_result is not None
             assert gtk_result.success == False
 
             # Verify at least one handler reported failure
             failed_handlers = [
-                name for name, hr in result_failed.handler_results.items()
+                name
+                for name, hr in result_failed.handler_results.items()
                 if not hr.success
             ]
             assert len(failed_handlers) >= 1
@@ -250,7 +242,7 @@ class TestIntegrationScenarios:
         # If only 1 out of 4 handlers fails, overall success might still be True (75% > 50%)
         # This is expected behavior according to manager.py line ~188:
         # "overall_success = success_ratio > 0.5"
-        
+
         # Verify system is in consistent state
         if gtk3_config.exists():
             current_content = gtk3_config.read_text()
@@ -258,10 +250,7 @@ class TestIntegrationScenarios:
             assert len(current_content) >= 0  # File exists and has content
 
     def test_theme_validation_compatibility_checking(
-        self,
-        mock_file_system,
-        mock_theme_incomplete,
-        mock_manager
+        self, mock_file_system, mock_theme_incomplete, mock_manager
     ):
         """
         IT-005: Theme validation - compatibility checking.
@@ -275,7 +264,7 @@ class TestIntegrationScenarios:
         assert validation_result is not None
 
         # Check for warnings (incomplete theme should have warnings)
-        if hasattr(validation_result, 'has_warnings'):
+        if hasattr(validation_result, "has_warnings"):
             # Some themes may not trigger warnings if validation is lenient
             # This is acceptable - validation ran without crashing
             pass

@@ -84,9 +84,9 @@ import sys
 import threading
 import time
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
 
-from gi.repository import Gtk, Adw, GLib, Gio, Pango  # type: ignore
+from gi.repository import Adw, Gio, GLib, Gtk, Pango  # type: ignore
 
 # Add the project root to Python path for imports
 project_root = Path(__file__).parent.parent

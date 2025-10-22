@@ -6,14 +6,18 @@ providing a modern, native interface for theme management.
 """
 
 import gi
-gi.require_version('Gtk', '4.0')
-gi.require_version('Adw', '1')
 
-from gi.repository import Gtk, Adw, GLib, Gio
-from pathlib import Path
-from typing import Optional, List, Dict, Any
-import sys
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
+
 import os
+import sys
+
+from pathlib import Path
+
+from typing import Any, Dict, List, Optional
+
+from gi.repository import Adw, Gio, GLib, Gtk
 
 # Add the project root to Python path for imports
 project_root = Path(__file__).parent.parent.parent
@@ -21,10 +25,11 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from unified_theming.core.manager import UnifiedThemeManager
-from unified_theming.core.types import ThemeInfo, ApplicationResult
+from unified_theming.core.types import ApplicationResult, ThemeInfo
 from unified_theming.utils.logging_config import get_logger
-from .widgets import ThemeListBox, ThemePreviewWidget, ProgressDialog
+
 from .dialogs import SettingsDialog
+from .widgets import ProgressDialog, ThemeListBox, ThemePreviewWidget
 
 logger = get_logger(__name__)
 
@@ -43,12 +48,12 @@ class ThemeApp(Adw.Application):
         """
         super().__init__(
             application_id="com.example.unified-theming",
-            flags=Gio.ApplicationFlags.FLAGS_NONE
+            flags=Gio.ApplicationFlags.FLAGS_NONE,
         )
 
         # Connect signals
-        self.connect('activate', self.on_activate)
-        self.connect('shutdown', self.on_shutdown)
+        self.connect("activate", self.on_activate)
+        self.connect("shutdown", self.on_shutdown)
 
         # Initialize core components
         self.manager: Optional[UnifiedThemeManager] = None
@@ -113,11 +118,7 @@ class ThemeApp(Adw.Application):
         Args:
             message: Error message to display
         """
-        dialog = Adw.MessageDialog.new(
-            self.window,
-            "Error",
-            message
-        )
+        dialog = Adw.MessageDialog.new(self.window, "Error", message)
         dialog.add_response("ok", "OK")
         dialog.set_default_response("ok")
         dialog.present()
@@ -140,20 +141,27 @@ class ThemeApp(Adw.Application):
 
         def apply_async():
             try:
-                GLib.idle_add(lambda: progress_dialog.update_progress(0.1, "Initializing..."))
+                GLib.idle_add(
+                    lambda: progress_dialog.update_progress(0.1, "Initializing...")
+                )
 
                 result = self.manager.apply_theme(theme_name)
 
                 GLib.idle_add(lambda: progress_dialog.update_progress(1.0, "Complete"))
-                GLib.idle_add(lambda: progress_dialog.complete(True, "Theme applied successfully"))
+                GLib.idle_add(
+                    lambda: progress_dialog.complete(True, "Theme applied successfully")
+                )
                 GLib.idle_add(lambda: self.on_theme_applied(result, callback))
 
             except Exception as e:
-                GLib.idle_add(lambda: progress_dialog.complete(False, f"Failed: {str(e)}"))
+                GLib.idle_add(
+                    lambda: progress_dialog.complete(False, f"Failed: {str(e)}")
+                )
                 GLib.idle_add(lambda: self.on_theme_error(str(e), callback))
 
         # Run in thread to avoid blocking UI
         from threading import Thread
+
         thread = Thread(target=apply_async, daemon=True)
         thread.start()
 
@@ -328,8 +336,6 @@ class MainWindow(Adw.ApplicationWindow):
         self.themes = themes
         self.theme_list.set_themes(themes)
 
-
-
     def on_apply_clicked(self, button):
         """
         Called when the apply button is clicked.
@@ -369,5 +375,5 @@ def main():
     return app.run(sys.argv)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())
