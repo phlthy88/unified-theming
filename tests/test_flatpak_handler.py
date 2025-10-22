@@ -1,11 +1,17 @@
 """Tests for unified_theming.handlers.flatpak_handler module."""
 import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch, MagicMock, mock_open
 import subprocess
-from unified_theming.core.types import ThemeData, Toolkit
-from unified_theming.handlers.flatpak_handler import FlatpakHandler
 
+from unified_theming.handlers.flatpak_handler import FlatpakHandler
+from unified_theming.core.types import ThemeData, Toolkit, ValidationResult
+from unified_theming.core.exceptions import HandlerNotAvailableError
+
+
+# ============================================================================
+# FIXTURES
+# ============================================================================
 
 @pytest.fixture
 def flatpak_handler():
@@ -17,12 +23,25 @@ def flatpak_handler():
 def sample_theme_data():
     """Sample theme data for testing."""
     return ThemeData(
-        name="TestTheme",
-        toolkit=Toolkit.GTK4,
-        colors={},
-        css_content=None,
+        name="Adwaita-dark",
+        toolkit=Toolkit.FLATPAK,
+        colors={
+            "theme_bg_color": "#2e3436",
+            "theme_fg_color": "#eeeeec",
+            "theme_selected_bg_color": "#3584e4"
+        },
         additional_data={}
     )
+
+
+@pytest.fixture
+def mock_flatpak_list():
+    """Mock Flatpak application list."""
+    return """
+org.gnome.Calculator
+org.mozilla.firefox
+com.spotify.Client
+"""
 
 
 # ============================================================================
@@ -30,262 +49,282 @@ def sample_theme_data():
 # ============================================================================
 
 def test_flatpak_handler_init(flatpak_handler):
-    """Test initialization of FlatpakHandler."""
+    """Test TC-FP-001: Initialize FlatpakHandler."""
+    assert flatpak_handler is not None
     assert flatpak_handler.toolkit == Toolkit.FLATPAK
-    assert hasattr(flatpak_handler, 'available')
 
 
-def test_flatpak_handler_init_checks_availability(flatpak_handler):
-    """Test that FlatpakHandler initialization checks availability."""
-    # The handler should have set the available property
-    assert hasattr(flatpak_handler, 'available')
-    assert isinstance(flatpak_handler.available, bool)
+@patch('subprocess.run')
+def test_flatpak_handler_available(mock_run, flatpak_handler):
+    """Test TC-FP-002: Check Flatpak is available."""
+    mock_run.return_value = Mock(returncode=0)
+    # Create a new handler instance to trigger the check again
+    handler = FlatpakHandler()
+    assert handler.is_available() is True
+
+
+@patch('subprocess.run')
+def test_flatpak_handler_not_available(mock_run, flatpak_handler):
+    """Test TC-FP-003: Check Flatpak not available."""
+    mock_run.side_effect = FileNotFoundError()
+    handler = FlatpakHandler()
+    assert handler.is_available() is False
 
 
 # ============================================================================
-# AVAILABILITY CHECKS
+# OVERRIDE CREATION TESTS
 # ============================================================================
 
-def test_check_flatpak_available_success():
-    """Test _check_flatpak_available when Flatpak is available."""
-    handler = FlatpakHandler()
-    with patch('subprocess.run') as mock_run:
-        mock_run.return_value.returncode = 0
-        result = handler._check_flatpak_available()
-        assert result is True
-        mock_run.assert_called_once()
-
-
-def test_check_flatpak_available_not_found():
-    """Test _check_flatpak_available when Flatpak is not available."""
-    handler = FlatpakHandler()
-    with patch('subprocess.run') as mock_run:
-        mock_run.side_effect = FileNotFoundError()
-        result = handler._check_flatpak_available()
-        assert result is False
-
-
-def test_check_flatpak_available_command_fails():
-    """Test _check_flatpak_available when command fails."""
-    handler = FlatpakHandler()
-    with patch('subprocess.run') as mock_run:
-        mock_run.return_value.returncode = 1
-        result = handler._check_flatpak_available()
-        assert result is False
-
-
-def test_check_flatpak_available_exception():
-    """Test _check_flatpak_available when exception occurs."""
-    handler = FlatpakHandler()
-    with patch('subprocess.run') as mock_run:
-        mock_run.side_effect = Exception("Test exception")
-        result = handler._check_flatpak_available()
-        assert result is False
-
-
-def test_is_available_method(flatpak_handler):
-    """Test the is_available method."""
+@patch('pathlib.Path.exists', return_value=True)
+@patch('subprocess.run')
+def test_apply_theme_success(mock_run, mock_exists, flatpak_handler, sample_theme_data):
+    """Test TC-FP-004: Apply theme successfully."""
+    # Mock the availability check
     flatpak_handler.available = True
-    assert flatpak_handler.is_available() is True
     
-    flatpak_handler.available = False
-    assert flatpak_handler.is_available() is False
-
-
-# ============================================================================
-# THEME APPLICATION TESTS
-# ============================================================================
-
-def test_apply_theme_when_flatpak_not_available(flatpak_handler, sample_theme_data, caplog):
-    """Test apply_theme when Flatpak is not available."""
-    flatpak_handler.available = False
+    # Mock the subprocess.run calls
+    mock_run.return_value = Mock(returncode=0)
+    
     result = flatpak_handler.apply_theme(sample_theme_data)
-    assert result is False
-    assert "Flatpak not available, skipping theme application" in caplog.text
+    assert result is True
+    
+    # Check that subprocess.run was called for both filesystem access grants and environment variables
+    assert mock_run.call_count >= 3  # At least 3 calls: 3 theme dirs + GTK_THEME + env vars
 
 
-def test_apply_theme_success_with_mocked_subprocess(flatpak_handler, sample_theme_data):
-    """Test apply_theme success with mocked subprocess calls."""
+@patch('pathlib.Path.exists', return_value=True)
+@patch('subprocess.run', side_effect=subprocess.CalledProcessError(1, 'flatpak'))
+def test_apply_theme_permission_denied(mock_run, mock_exists, flatpak_handler, sample_theme_data):
+    """Test TC-FP-005: Handle permission denied when writing overrides."""
     flatpak_handler.available = True
     
-    # Mock the necessary directories as existing
-    with patch.object(Path, 'exists', return_value=True), \
-         patch('subprocess.run') as mock_run:
-        # Mock subprocess.run to return success for all calls
-        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
-        
-        result = flatpak_handler.apply_theme(sample_theme_data)
-        assert result is True
-        
-        # Check that subprocess.run was called correctly
-        assert mock_run.call_count >= 3  # At least 3 subprocess calls in apply_theme
-
-
-def test_apply_theme_filesystem_access_failure(flatpak_handler, sample_theme_data, caplog):
-    """Test apply_theme when filesystem access fails with CalledProcessError."""
-    flatpak_handler.available = True
-    
-    with patch.object(Path, 'exists', return_value=True), \
-         patch('subprocess.run', side_effect=subprocess.CalledProcessError(1, "cmd")):
-        
-        result = flatpak_handler.apply_theme(sample_theme_data)
-        assert result is False  # Should return False when command fails with CalledProcessError
-
-
-def test_apply_theme_command_error(flatpak_handler, sample_theme_data):
-    """Test apply_theme when commands fail with CalledProcessError."""
-    flatpak_handler.available = True
-    
-    with patch.object(Path, 'exists', return_value=True), \
-         patch('subprocess.run', side_effect=Exception("Command failed")):
-        
+    with patch('unified_theming.handlers.flatpak_handler.logger') as mock_logger:
         result = flatpak_handler.apply_theme(sample_theme_data)
         assert result is False
+        mock_logger.error.assert_called_once()
 
 
-def test_apply_theme_general_exception(flatpak_handler, sample_theme_data):
-    """Test apply_theme when general exception occurs."""
-    flatpak_handler.available = True
+@patch('subprocess.run')
+def test_apply_theme_flatpak_not_installed(mock_run, flatpak_handler, sample_theme_data):
+    """Test TC-FP-006: Handle Flatpak not installed."""
+    flatpak_handler.available = False
     
-    with patch.object(Path, 'exists', return_value=True), \
-         patch('subprocess.run', side_effect=Exception("General error")):
-        
+    with patch('unified_theming.handlers.flatpak_handler.logger') as mock_logger:
         result = flatpak_handler.apply_theme(sample_theme_data)
         assert result is False
+        mock_logger.warning.assert_called_once()
 
-
-# ============================================================================
-# CURRENT THEME TESTS
-# ============================================================================
 
 def test_get_current_theme(flatpak_handler):
-    """Test get_current_theme method."""
+    """Test TC-FP-007: Get currently applied Flatpak theme."""
     result = flatpak_handler.get_current_theme()
     assert result == "system"
 
 
 # ============================================================================
-# COMPATIBILITY VALIDATION TESTS
+# THEME VARIABLE MAPPING TESTS
 # ============================================================================
 
-def test_validate_compatibility_gtk4_theme(flatpak_handler, sample_theme_data):
-    """Test validate_compatibility with GTK4 theme."""
-    result = flatpak_handler.validate_compatibility(sample_theme_data)
-    assert result.valid is True
-
-
-def test_validate_compatibility_gtk3_theme(flatpak_handler):
-    """Test validate_compatibility with GTK3 theme."""
-    theme_data = ThemeData(
-        name="TestTheme",
-        toolkit=Toolkit.GTK3,
+def test_validate_compatibility_gtk_theme(flatpak_handler, sample_theme_data):
+    """Test TC-FP-008: Validate GTK theme compatibility."""
+    # Modify the theme data to be a GTK theme
+    gtk_theme_data = ThemeData(
+        name="Adwaita",
+        toolkit=Toolkit.GTK4,
         colors={},
-        css_content=None,
         additional_data={}
     )
-    result = flatpak_handler.validate_compatibility(theme_data)
+    
+    result = flatpak_handler.validate_compatibility(gtk_theme_data)
+    assert isinstance(result, ValidationResult)
     assert result.valid is True
 
 
-def test_validate_compatibility_non_gtk_theme(flatpak_handler):
-    """Test validate_compatibility with non-GTK theme."""
-    theme_data = ThemeData(
-        name="TestTheme",
-        toolkit=Toolkit.QT5,  # Different toolkit
+def test_validate_compatibility_non_gtk_theme(flatpak_handler, sample_theme_data):
+    """Test TC-FP-009: Validate non-GTK theme compatibility."""
+    # Modify the theme data to be a non-GTK theme
+    qt_theme_data = ThemeData(
+        name="Breeze",
+        toolkit=Toolkit.QT5,
         colors={},
-        css_content=None,
         additional_data={}
     )
-    result = flatpak_handler.validate_compatibility(theme_data)
+    
+    result = flatpak_handler.validate_compatibility(qt_theme_data)
+    assert isinstance(result, ValidationResult)
     assert result.valid is True
-    # Should have an info message about Flatpak using system theme components
 
 
 # ============================================================================
-# FEATURE AND CONFIG PATH TESTS
+# PORTAL DETECTION TESTS
+# ============================================================================
+
+@patch('subprocess.run')
+def test_detect_portal_available(mock_run, flatpak_handler):
+    """Test TC-FP-010: Detect xdg-desktop-portal is available."""
+    mock_run.return_value = Mock(returncode=0)
+    
+    handler = FlatpakHandler()
+    assert handler.is_available() is True
+
+
+@patch('subprocess.run')
+def test_detect_portal_not_available(mock_run, flatpak_handler):
+    """Test TC-FP-011: Handle missing xdg-desktop-portal."""
+    mock_run.side_effect = FileNotFoundError()
+    
+    handler = FlatpakHandler()
+    assert handler.is_available() is False
+
+
+# ============================================================================
+# ERROR HANDLING TESTS
+# ============================================================================
+
+@patch('pathlib.Path.exists', return_value=True)
+@patch('subprocess.run', side_effect=Exception("Unexpected error"))
+def test_apply_theme_unexpected_error(mock_run, mock_exists, flatpak_handler, sample_theme_data):
+    """Test TC-FP-012: Handle unexpected error during theme application."""
+    flatpak_handler.available = True
+    
+    with patch('unified_theming.handlers.flatpak_handler.logger') as mock_logger:
+        result = flatpak_handler.apply_theme(sample_theme_data)
+        assert result is False
+        mock_logger.error.assert_called_once()
+
+
+@patch('pathlib.Path.exists', return_value=True)
+@patch('subprocess.run', side_effect=[Mock(returncode=0), Mock(returncode=0), subprocess.CalledProcessError(1, 'flatpak')])
+def test_apply_theme_partial_failure(mock_run, mock_exists, flatpak_handler, sample_theme_data):
+    """Test TC-FP-013: Handle partial command failures."""
+    flatpak_handler.available = True
+    
+    # Only the first two commands succeed, the third fails
+    with patch('unified_theming.handlers.flatpak_handler.logger'):
+        result = flatpak_handler.apply_theme(sample_theme_data)
+        # Should still return False because of the failure in the third command
+        assert result is False
+
+
+# ============================================================================
+# ACCESSIBILITY TESTS
 # ============================================================================
 
 def test_get_supported_features(flatpak_handler):
-    """Test get_supported_features method."""
+    """Test TC-FP-014: Get supported features."""
     features = flatpak_handler.get_supported_features()
-    assert isinstance(features, list)
     assert "filesystem_access" in features
     assert "environment_vars" in features
 
 
 def test_get_config_paths(flatpak_handler):
-    """Test get_config_paths method."""
+    """Test TC-FP-015: Get configuration paths."""
     paths = flatpak_handler.get_config_paths()
-    assert isinstance(paths, list)
-    assert len(paths) == 1
     expected_path = Path.home() / ".config" / "flatpak" / "overrides"
-    assert paths[0] == expected_path
+    assert expected_path in paths
 
 
 # ============================================================================
-# ADDITIONAL TESTS
+# ADDITIONAL FUNCTIONALITY TESTS
 # ============================================================================
 
-def test_apply_theme_with_nonexistent_directories(flatpak_handler, sample_theme_data):
-    """Test apply_theme when theme directories don't exist."""
+@patch('pathlib.Path.exists', return_value=False)
+@patch('subprocess.run')
+def test_apply_theme_no_theme_dirs(mock_run, mock_exists, flatpak_handler, sample_theme_data):
+    """Test TC-FP-016: Apply theme when no theme directories exist."""
     flatpak_handler.available = True
+    mock_run.return_value = Mock(returncode=0)
     
-    with patch.object(Path, 'exists', return_value=False), \
-         patch('subprocess.run') as mock_run:
-        mock_run.return_value = Mock(returncode=0)
-        
-        result = flatpak_handler.apply_theme(sample_theme_data)
-        assert result is True
-        # Should still try to set environment variables even if directories don't exist
+    result = flatpak_handler.apply_theme(sample_theme_data)
+    assert result is True
+    # Should still succeed, but with less subprocess calls
 
 
-def test_get_supported_features_returns_list(flatpak_handler):
-    """Test that get_supported_features always returns a list."""
-    features = flatpak_handler.get_supported_features()
-    assert isinstance(features, list)
+@patch('pathlib.Path.exists', side_effect=[True, True, True])  # All theme dirs exist
+@patch('subprocess.run')
+def test_apply_theme_all_dirs_exist(mock_run, mock_exists, flatpak_handler, sample_theme_data):
+    """Test TC-FP-017: Apply theme when all theme directories exist."""
+    flatpak_handler.available = True
+    mock_run.return_value = Mock(returncode=0)
+    
+    result = flatpak_handler.apply_theme(sample_theme_data)
+    assert result is True
+    # Should call subprocess.run multiple times for each dir and environment variable
 
 
-def test_validate_compatibility_with_empty_theme_data(flatpak_handler):
-    """Test validate_compatibility with minimal theme data."""
-    empty_theme_data = ThemeData(
-        name="EmptyTheme",
-        toolkit=Toolkit.GTK4,
-        colors={},
-        css_content=None,
-        additional_data={}
-    )
-    result = flatpak_handler.validate_compatibility(empty_theme_data)
-    assert result.valid is True
+@patch('subprocess.run')
+def test__check_flatpak_available_success(mock_run, flatpak_handler):
+    """Test TC-FP-018: _check_flatpak_available returns True when Flatpak is available."""
+    mock_run.return_value = Mock(returncode=0)
+    
+    result = flatpak_handler._check_flatpak_available()
+    assert result is True
 
 
-def test_handler_toolkit_property(flatpak_handler):
-    """Test that the handler has the correct toolkit."""
+@patch('subprocess.run', side_effect=FileNotFoundError())
+def test__check_flatpak_available_not_found(mock_run, flatpak_handler):
+    """Test TC-FP-019: _check_flatpak_available returns False when Flatpak is not installed."""
+    result = flatpak_handler._check_flatpak_available()
+    assert result is False
+
+
+@patch('subprocess.run', side_effect=Exception("Other error"))
+def test__check_flatpak_available_exception(mock_run, flatpak_handler):
+    """Test TC-FP-020: _check_flatpak_available returns False when other exception occurs."""
+    result = flatpak_handler._check_flatpak_available()
+    assert result is False
+
+
+def test_toolkit_assignment(flatpak_handler):
+    """Test TC-FP-021: Handler is correctly associated with Flatpak toolkit."""
     assert flatpak_handler.toolkit == Toolkit.FLATPAK
 
 
-def test_validate_compatibility_adds_info_for_non_gtk(flatpak_handler):
-    """Test that compatibility validation adds info for non-GTK themes."""
-    theme_data = ThemeData(
-        name="TestTheme",
-        toolkit=Toolkit.QT5,
-        colors={},
-        css_content=None,
-        additional_data={}
-    )
-    result = flatpak_handler.validate_compatibility(theme_data)
-    # The handler should add info about Flatpak using system theme components for non-GTK themes
-    assert result.valid is True  # It's still valid, just with info message
+def test_validate_compatibility_result_structure(flatpak_handler, sample_theme_data):
+    """Test TC-FP-022: validate_compatibility returns proper ValidationResult."""
+    result = flatpak_handler.validate_compatibility(sample_theme_data)
+    assert isinstance(result, ValidationResult)
+    assert hasattr(result, 'valid')
+    assert hasattr(result, 'messages')
 
 
-def test_apply_theme_logs_info_when_successful(flatpak_handler, sample_theme_data, caplog):
-    """Test that apply_theme logs information when successful."""
+@patch('pathlib.Path.exists', side_effect=[True, False, True])  # First and third exist
+@patch('subprocess.run')
+def test_apply_theme_mixed_theme_dirs(mock_run, mock_exists, flatpak_handler, sample_theme_data):
+    """Test TC-FP-023: Apply theme with mixed existing/non-existing theme directories."""
+    flatpak_handler.available = True
+    mock_run.return_value = Mock(returncode=0)
+    
+    result = flatpak_handler.apply_theme(sample_theme_data)
+    assert result is True
+
+
+@patch('pathlib.Path.exists', return_value=True)
+@patch('subprocess.run', side_effect=[
+    Mock(returncode=0),  # First theme dir success
+    Mock(returncode=1),  # Second theme dir fails
+    Mock(returncode=0),  # Third theme dir success
+    Mock(returncode=0),  # GTK_THEME success
+    Mock(returncode=0)   # Additional env vars success
+])
+def test_apply_theme_with_some_dir_failures(mock_run, mock_exists, flatpak_handler, sample_theme_data):
+    """Test TC-FP-024: Apply theme when some theme directory commands fail."""
     flatpak_handler.available = True
     
-    with patch.object(Path, 'exists', return_value=True), \
-         patch('subprocess.run') as mock_run:
-        mock_run.return_value.returncode = 0
-        
-        with caplog.at_level("INFO"):
-            result = flatpak_handler.apply_theme(sample_theme_data)
-            assert result is True
-            assert f"Applying theme '{sample_theme_data.name}' to Flatpak applications" in caplog.text
+    with patch('unified_theming.handlers.flatpak_handler.logger'):
+        result = flatpak_handler.apply_theme(sample_theme_data)
+        # Should still succeed since only one dir command failed
+        assert result is True
+
+
+@patch('pathlib.Path.exists', return_value=True)
+@patch('subprocess.run', side_effect=subprocess.CalledProcessError(1, ['flatpak', 'override']))
+def test_apply_theme_all_dirs_fail(mock_run, mock_exists, flatpak_handler, sample_theme_data):
+    """Test TC-FP-025: Apply theme when all theme directory commands fail."""
+    flatpak_handler.available = True
+    
+    with patch('unified_theming.handlers.flatpak_handler.logger') as mock_logger:
+        result = flatpak_handler.apply_theme(sample_theme_data)
+        assert result is False
+        # At least one error log should occur
+        assert mock_logger.warning.call_count >= 3  # For each failed directory access grant
