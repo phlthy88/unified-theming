@@ -393,7 +393,7 @@ class TestDryRunVerbosity:
 class TestNormalModeUnaffected:
     """Test that normal apply mode is unaffected by dry-run implementation."""
 
-    def test_apply_without_dry_run_calls_apply_theme(self, cli_runner):
+    def test_set_theme_without_dry_run_calls_apply_theme(self, cli_runner):
         """Test that normal mode still calls apply_theme."""
         from unified_theming.core.types import ApplicationResult, HandlerResult, Toolkit
 
@@ -423,7 +423,7 @@ class TestNormalModeUnaffected:
             mock_manager.plan_changes.assert_not_called()
             assert result.exit_code == 0
 
-    def test_apply_without_dry_run_shows_success(self, cli_runner):
+    def test_set_theme_without_dry_run_shows_success(self, cli_runner):
         """Test that normal mode shows success messages."""
         from unified_theming.core.types import ApplicationResult, HandlerResult, Toolkit
 
