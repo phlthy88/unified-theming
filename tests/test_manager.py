@@ -434,36 +434,52 @@ def test_apply_theme_application_failure():
 
 def test_apply_theme_exception_handling():
     """TC-M-014: Test exception handling during theme application."""
-    with patch('unified_theming.core.manager.UnifiedThemeParser') as mock_parser_class, \
-         patch('unified_theming.core.manager.ConfigManager') as mock_config_class, \
-         patch('unified_theming.handlers.gtk_handler.GTKHandler') as mock_gtk_handler:
-        
-        # Setup mocks
-        mock_parser = Mock()
-        mock_parser.discover_themes.return_value = {
-            'TestTheme': ThemeInfo(
-                name='TestTheme',
-                path=Path('/fake/path'),
-                supported_toolkits=[Toolkit.GTK4],
-                colors={'theme_bg_color': '#ffffff'}
-            )
-        }
-        mock_parser_class.return_value = mock_parser
-        
-        mock_config = Mock()
-        mock_config.backup_current_state.return_value = "backup_123"
-        mock_config_class.return_value = mock_config
-        
-        # Setup handler that raises an exception
-        mock_gtk = Mock()
-        mock_gtk.is_available.return_value = True
-        mock_gtk.toolkit = Toolkit.GTK4
-        mock_gtk.apply_theme.side_effect = Exception("Unexpected error")
-        mock_gtk.validate_compatibility.return_value = ValidationResult(valid=True)
-        
-        mock_gtk_handler.return_value = mock_gtk
-        
-        manager = UnifiedThemeManager()
+    manager = UnifiedThemeManager()
+    
+    # Setup mocks
+    mock_parser = Mock()
+    mock_parser.discover_themes.return_value = {
+        'TestTheme': ThemeInfo(
+            name='TestTheme',
+            path=Path('/fake/path'),
+            supported_toolkits=[Toolkit.GTK4],
+            colors={'theme_bg_color': '#ffffff'}
+        )
+    }
+    mock_parser.theme_directories = [Path('/usr/share/themes')]
+    
+    mock_config = Mock()
+    mock_config.backup_current_state.return_value = "backup_123"
+    
+    # Setup handler that raises an exception
+    mock_gtk = Mock()
+    mock_gtk.is_available.return_value = True
+    mock_gtk.toolkit = Toolkit.GTK4
+    mock_gtk.apply_theme.side_effect = Exception("Unexpected error")
+    mock_gtk.validate_compatibility.return_value = ValidationResult(valid=True)
+    
+    mock_qt = Mock()
+    mock_qt.is_available.return_value = False
+    mock_qt.toolkit = Toolkit.QT5
+    
+    mock_flatpak = Mock()
+    mock_flatpak.is_available.return_value = False
+    mock_flatpak.toolkit = Toolkit.FLATPAK
+    
+    mock_snap = Mock()
+    mock_snap.is_available.return_value = False
+    mock_snap.toolkit = Toolkit.SNAP
+    
+    mock_handlers = {
+        'gtk': mock_gtk,
+        'qt': mock_qt,
+        'flatpak': mock_flatpak,
+        'snap': mock_snap,
+    }
+    
+    with patch.object(manager, 'parser', mock_parser), \
+         patch.object(manager, 'config_manager', mock_config), \
+         patch.object(manager, 'handlers', mock_handlers):
         result = manager.apply_theme('TestTheme')
         
         assert 'gtk' in result.handler_results

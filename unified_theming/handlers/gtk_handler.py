@@ -70,7 +70,7 @@ class GTKHandler(BaseHandler):
             success = True
             
             # Apply to GTK2/3 via GSettings
-            if self._is_gtk3_available():
+            if self.is_available():
                 if not self._apply_gtk3_theme(theme_data.name):
                     logger.error(f"Failed to apply GTK3 theme: {theme_data.name}")
                     success = False

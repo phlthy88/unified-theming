@@ -147,19 +147,18 @@ def list(ctx, toolkit: Tuple[str, ...], format: str):
 # ============================================================================
 
 @cli.command()
-@click.argument('theme_name')
 @click.option(
-    '--targets', '-t',
+    '--targets',
     multiple=True,
     type=click.Choice([
         'gtk2', 'gtk3', 'gtk4', 'libadwaita',
         'qt5', 'qt6', 'flatpak', 'snap', 'all'
     ], case_sensitive=False),
-    default=['all'],
     help='Target toolkits (default: all)'
 )
+@click.argument('theme_name')
 @click.pass_context
-def apply(ctx, theme_name: str, targets: Tuple[str, ...]):
+def apply(ctx, targets: Tuple[str, ...], theme_name: str):
     """
     Apply THEME_NAME to specified targets.
 
@@ -172,7 +171,8 @@ def apply(ctx, theme_name: str, targets: Tuple[str, ...]):
         manager = UnifiedThemeManager(config_path=ctx.obj.get('config'))
 
         # Convert targets to string list
-        if 'all' in targets:
+        # If no targets specified, or 'all' is in targets, apply to all
+        if not targets or 'all' in targets:
             target_list = None  # None means all available toolkits
         else:
             target_list = list(targets)

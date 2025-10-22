@@ -26,7 +26,13 @@ pyproject.toml
 ./unified_theming/utils/file.py
 ./unified_theming/utils/logging_config.py
 ./unified_theming/utils/validation.py
+tests/test_cli_basic.py
+tests/test_cli_commands.py
+tests/test_cli_commands_detailed.py
 tests/test_color_utils.py
+tests/test_config_backup.py
+tests/test_flatpak_handler.py
+tests/test_integration.py
 tests/test_manager.py
 tests/test_parser.py
 unified_theming/__init__.py
