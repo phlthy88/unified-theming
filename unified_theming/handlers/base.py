@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from ..core.types import ThemeData, ValidationResult, Toolkit, HandlerResult
+from ..core.types import ThemeData, ValidationResult, Toolkit, HandlerResult, PlannedChange
 from ..core.exceptions import ThemeApplicationError
 
 
@@ -89,8 +89,25 @@ class BaseHandler(ABC):
     def get_config_paths(self) -> List[Path]:
         """
         Get list of configuration paths used by this handler.
-        
+
         Returns:
             List of paths that might be modified by this handler
         """
+        return []
+
+    def plan_theme(self, theme_data: ThemeData) -> List[PlannedChange]:
+        """
+        Plan theme changes without applying them (dry-run).
+
+        This method should return a list of all changes that would be made
+        if apply_theme() were called with the same theme_data.
+
+        Args:
+            theme_data: Theme data to plan for
+
+        Returns:
+            List of PlannedChange objects describing what would change
+        """
+        # Default implementation: returns empty list
+        # Subclasses should override to provide detailed planning
         return []

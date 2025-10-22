@@ -307,6 +307,77 @@ class Backup:
 
 
 @dataclass
+class PlannedChange:
+    """
+    Represents a planned change that would be made during theme application.
+
+    Used by dry-run mode to show what would change without actually applying.
+    """
+
+    handler_name: str
+    """Name of the handler that would make this change."""
+
+    file_path: Path
+    """Path to the file that would be modified or created."""
+
+    change_type: str
+    """Type of change: 'create', 'modify', 'delete'."""
+
+    description: str
+    """Human-readable description of what would change."""
+
+    current_value: Optional[str] = None
+    """Current value/content (if file exists)."""
+
+    new_value: Optional[str] = None
+    """New value/content that would be written."""
+
+    toolkit: Optional[Toolkit] = None
+    """Toolkit this change affects."""
+
+
+@dataclass
+class PlanResult:
+    """
+    Result of planning theme changes (dry-run mode).
+
+    Contains all changes that would be made without actually applying them.
+    """
+
+    theme_name: str
+    """Name of theme being planned."""
+
+    planned_changes: List[PlannedChange]
+    """List of all planned changes."""
+
+    validation_result: Optional[ValidationResult] = None
+    """Result of theme validation."""
+
+    available_handlers: Dict[str, bool] = field(default_factory=dict)
+    """Handler availability status."""
+
+    estimated_files_affected: int = 0
+    """Total number of files that would be affected."""
+
+    warnings: List[str] = field(default_factory=list)
+    """Warnings about the planned operation."""
+
+    def __post_init__(self):
+        """Calculate derived fields."""
+        self.estimated_files_affected = len(set(
+            change.file_path for change in self.planned_changes
+        ))
+
+    def get_changes_by_handler(self, handler_name: str) -> List[PlannedChange]:
+        """Get all planned changes for a specific handler."""
+        return [c for c in self.planned_changes if c.handler_name == handler_name]
+
+    def get_changes_by_type(self, change_type: str) -> List[PlannedChange]:
+        """Get all planned changes of a specific type."""
+        return [c for c in self.planned_changes if c.change_type == change_type]
+
+
+@dataclass
 class ColorMapping:
     """
     Mapping between GTK and Qt color variables.

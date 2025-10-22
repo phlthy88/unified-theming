@@ -156,15 +156,21 @@ def list(ctx, toolkit: Tuple[str, ...], format: str):
     ], case_sensitive=False),
     help='Target toolkits (default: all)'
 )
+@click.option(
+    '--dry-run',
+    is_flag=True,
+    help='Preview changes without applying them (safe, non-destructive)'
+)
 @click.argument('theme_name')
 @click.pass_context
-def apply(ctx, targets: Tuple[str, ...], theme_name: str):
+def apply(ctx, targets: Tuple[str, ...], dry_run: bool, theme_name: str):
     """
     Apply THEME_NAME to specified targets.
 
     \b
     Examples:
         unified-theming apply Nord
+        unified-theming apply Nord --dry-run
         unified-theming apply Dracula --targets gtk4 --targets libadwaita
     """
     try:
@@ -177,7 +183,59 @@ def apply(ctx, targets: Tuple[str, ...], theme_name: str):
         else:
             target_list = list(targets)
 
-        # Apply theme
+        # Dry-run mode: preview changes without applying
+        if dry_run:
+            click.secho(f"Planning theme '{theme_name}' (dry-run mode)...", fg='cyan')
+            plan_result = manager.plan_changes(theme_name, targets=target_list)
+
+            # Display plan summary
+            click.secho(f"\n✓ Planning complete for theme '{theme_name}'", fg='green')
+            click.echo(f"  Files that would be affected: {plan_result.estimated_files_affected}")
+            click.echo(f"  Total changes: {len(plan_result.planned_changes)}")
+
+            # Show handler availability
+            click.echo("\nHandler Availability:")
+            for handler_name, available in plan_result.available_handlers.items():
+                status = "✓ Available" if available else "✗ Not available"
+                color = 'green' if available else 'yellow'
+                click.secho(f"  {handler_name}: {status}", fg=color)
+
+            # Show validation results
+            if plan_result.validation_result and plan_result.validation_result.messages:
+                click.echo("\nValidation:")
+                for msg in plan_result.validation_result.messages:
+                    color = {
+                        'ERROR': 'red',
+                        'WARNING': 'yellow',
+                        'INFO': 'blue'
+                    }.get(msg.level.value.upper(), 'white')
+                    click.secho(f"  [{msg.level.value.upper()}] {msg.message}", fg=color)
+
+            # Show planned changes by handler
+            if plan_result.planned_changes:
+                click.echo("\nPlanned Changes:")
+                for handler_name in plan_result.available_handlers.keys():
+                    handler_changes = plan_result.get_changes_by_handler(handler_name)
+                    if handler_changes:
+                        click.echo(f"\n  {handler_name}:")
+                        for change in handler_changes:
+                            click.echo(f"    {change.change_type.upper()}: {change.file_path}")
+                            click.echo(f"      {change.description}")
+            else:
+                click.echo("\nNo changes would be made.")
+
+            # Show warnings
+            if plan_result.warnings:
+                click.echo("\nWarnings:")
+                for warning in plan_result.warnings:
+                    click.secho(f"  ⚠ {warning}", fg='yellow')
+
+            click.echo("\n" + "=" * 70)
+            click.secho("DRY-RUN MODE: No changes were made to your system.", fg='cyan', bold=True)
+            click.echo("Run without --dry-run to apply these changes.")
+            return
+
+        # Apply theme (actual mode)
         click.echo(f"Applying theme '{theme_name}'...")
         result = manager.apply_theme(theme_name, targets=target_list)
 

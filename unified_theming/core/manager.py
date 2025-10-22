@@ -8,8 +8,8 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from ..utils.logging_config import get_logger
 from .types import (
-    ThemeInfo, ThemeData, ApplicationResult, HandlerResult, 
-    Toolkit, ValidationResult
+    ThemeInfo, ThemeData, ApplicationResult, HandlerResult,
+    Toolkit, ValidationResult, PlanResult, PlannedChange
 )
 from .parser import UnifiedThemeParser
 from .config import ConfigManager
@@ -211,6 +211,92 @@ class UnifiedThemeManager:
         
         logger.info(f"Theme application completed with overall success: {overall_success}")
         return result
+
+    def plan_changes(
+        self,
+        theme_name: str,
+        targets: Optional[List[str]] = None
+    ) -> PlanResult:
+        """
+        Plan theme changes without applying them (dry-run mode).
+
+        This method performs all validation and planning steps that would
+        occur during theme application, but does not modify any files.
+
+        Args:
+            theme_name: Name of theme to plan
+            targets: List of targets to plan for (e.g., ['gtk', 'qt'])
+                    If None, plans for all available targets
+
+        Returns:
+            PlanResult with all planned changes
+
+        Raises:
+            ThemeNotFoundError: If theme doesn't exist
+        """
+        logger.info(f"Planning theme '{theme_name}' for targets: {targets or 'all'}")
+
+        # Validate theme exists and get theme info
+        themes = self.discover_themes()
+        if theme_name not in themes:
+            raise ThemeNotFoundError(theme_name, searched_paths=list(self.parser.theme_directories))
+
+        theme_info = themes[theme_name]
+
+        # Determine which handlers to use
+        if targets is None:
+            handlers_to_use = self.handlers
+        else:
+            handlers_to_use = {
+                name: handler for name, handler in self.handlers.items()
+                if name in targets
+            }
+
+        # Get handler availability
+        available_handlers = {
+            name: handler.is_available()
+            for name, handler in handlers_to_use.items()
+        }
+
+        # Validate theme
+        validation_result = self.parser.validate_theme(theme_info.path)
+
+        # Collect planned changes from each handler
+        all_planned_changes: List[PlannedChange] = []
+        warnings: List[str] = []
+
+        for handler_name, handler in handlers_to_use.items():
+            try:
+                # Check if handler is available
+                if not handler.is_available():
+                    logger.info(f"Handler {handler_name} not available, skipping")
+                    warnings.append(f"Handler {handler_name} is not available (toolkit not installed)")
+                    continue
+
+                # Prepare theme data for this handler
+                theme_data = self._prepare_theme_data(theme_info, handler.toolkit)
+
+                # Get planned changes from handler
+                planned_changes = handler.plan_theme(theme_data)
+                all_planned_changes.extend(planned_changes)
+
+                logger.debug(f"Handler {handler_name} would make {len(planned_changes)} changes")
+
+            except Exception as e:
+                logger.error(f"Error planning changes for {handler_name}: {e}")
+                warnings.append(f"Error planning {handler_name}: {str(e)}")
+
+        # Create and return the plan result
+        plan_result = PlanResult(
+            theme_name=theme_name,
+            planned_changes=all_planned_changes,
+            validation_result=validation_result,
+            available_handlers=available_handlers,
+            warnings=warnings
+        )
+
+        logger.info(f"Planning completed: {len(all_planned_changes)} changes would be made to {plan_result.estimated_files_affected} files")
+        return plan_result
 
     def _prepare_theme_data(self, theme_info: ThemeInfo, target_toolkit: Toolkit) -> ThemeData:
         """
