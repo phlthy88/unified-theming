@@ -1,0 +1,25 @@
+[flake8]
+max-line-length = 88
+extend-ignore = E203, W503, E402, E501, E741, F401, F541, F841, E712, E722
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    build,
+    dist,
+    *.egg-info,
+    .pytest_cache,
+    .mypy_cache,
+    .tox
+
+# E203: whitespace before ':' (conflicts with black)
+# W503: line break before binary operator (conflicts with black)
+# E402: module level import not at top of file (needed for gi.require_version)
+# E501: line too long (handled by black when possible)
+# E741: ambiguous variable name 'l' (common in color processing)
+# F401: imported but unused (may be used in type hints or future code)
+# F541: f-string without placeholders (may be intentional for consistency)
+# F841: local variable assigned but never used (may be intentional in tests)
+# E712: comparison to True/False (sometimes more readable)
+# E722: bare except (sometimes necessary for broad exception handling)

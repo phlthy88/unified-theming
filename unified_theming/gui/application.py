@@ -10,12 +10,10 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
-import os
+
 import sys
-
 from pathlib import Path
-
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from gi.repository import Adw, Gio, GLib, Gtk
 
@@ -154,10 +152,11 @@ class ThemeApp(Adw.Application):
                 GLib.idle_add(lambda: self.on_theme_applied(result, callback))
 
             except Exception as e:
+                error_msg = str(e)
                 GLib.idle_add(
-                    lambda: progress_dialog.complete(False, f"Failed: {str(e)}")
+                    lambda: progress_dialog.complete(False, f"Failed: {error_msg}")
                 )
-                GLib.idle_add(lambda: self.on_theme_error(str(e), callback))
+                GLib.idle_add(lambda: self.on_theme_error(error_msg, callback))
 
         # Run in thread to avoid blocking UI
         from threading import Thread
