@@ -1,0 +1,472 @@
+"""
+Color utilities for Unified Theming Application.
+
+This module provides utility functions for color format conversions,
+validation, and translation between different toolkit color systems.
+"""
+import re
+from typing import Dict, Tuple, Optional
+from ..core.types import ColorFormat
+from ..core.exceptions import ColorValidationError
+
+
+def validate_color_format(color_value: str) -> bool:
+def normalize_color_format(color_value: str, target_format: ColorFormat = ColorFormat.HEX) -> str:
+    """
+    Normalize a color value to a specific format.
+    
+    Args:
+        color_value: Color value to normalize
+        target_format: Target format (defaults to HEX)
+        
+    Returns:
+        Normalized color value in requested format
+        
+    Raises:
+        ColorValidationError: If color value is invalid or format conversion fails
+    """
+    if not validate_color_format(color_value):
+        raise ColorValidationError("unknown", color_value, "Invalid color format")
+    
+    color_value = color_value.strip().lower()
+    
+    if target_format == ColorFormat.HEX:
+        return _to_hex(color_value)
+    elif target_format == ColorFormat.RGB:
+        return _to_rgb(color_value)
+    elif target_format == ColorFormat.RGBA:
+        return _to_rgba(color_value)
+    elif target_format == ColorFormat.HSL:
+        return _to_hsl(color_value)
+    elif target_format == ColorFormat.NAMED:
+        return _to_named(color_value)
+    else:
+        return color_value  # Return as is for unknown formats
+
+
+def _to_hex(color_value: str) -> str:
+    """Convert color to hex format."""
+    color_value = color_value.strip().lower()
+    
+    # If already hex format
+    if color_value.startswith('#'):
+        # Expand #RGB to #RRGGBB
+        if len(color_value) == 4:
+            return f"#{color_value[1]*2}{color_value[2]*2}{color_value[3]*2}"
+        return color_value
+    
+    # If RGB format
+    if color_value.startswith('rgb('):
+        # Extract RGB values
+        match = re.match(r'rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)', color_value, re.IGNORECASE)
+        if match:
+            r, g, b = [int(x) for x in match.groups()]
+            return f"#{r:02x}{g:02x}{b:02x}"
+    
+    # If RGBA format
+    if color_value.startswith('rgba('):
+        # Extract RGB values (ignore alpha)
+        match = re.match(r'rgba\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*[\d.]+\s*\)', color_value, re.IGNORECASE)
+        if match:
+            r, g, b = [int(x) for x in match.groups()]
+            return f"#{r:02x}{g:02x}{b:02x}"
+    
+    # If HSL format
+    if color_value.startswith('hsl('):
+        # Convert HSL to RGB then to hex
+        match = re.match(r'hsl\s*\(\s*(\d+)\s*,\s*(\d+)%\s*,\s*(\d+)%\s*\)', color_value, re.IGNORECASE)
+        if match:
+            h, s, l = [int(x) for x in match.groups()]
+            r, g, b = hsl_to_rgb(h, s, l)
+            return f"#{r:02x}{g:02x}{b:02x}"
+    
+    # If named color, convert to hex
+    named_colors = {
+        'black': '#000000', 'white': '#ffffff', 'red': '#ff0000', 'green': '#008000',
+        'blue': '#0000ff', 'yellow': '#ffff00', 'cyan': '#00ffff', 'magenta': '#ff00ff',
+        'orange': '#ffa500', 'purple': '#800080', 'brown': '#a52a2a', 'pink': '#ffc0cb',
+        'gray': '#808080', 'silver': '#c0c0c0', 'gold': '#ffd700', 'violet': '#ee82ee'
+    }
+    
+    if color_value in named_colors:
+        return named_colors[color_value]
+    
+    # If we can't convert, return the original
+    return color_value
+
+
+def _to_rgb(color_value: str) -> str:
+    """Convert color to RGB format."""
+    color_value = color_value.strip().lower()
+    
+    # If already RGB format
+    if color_value.startswith('rgb('):
+        return color_value
+    
+    # If RGBA format, convert to RGB
+    if color_value.startswith('rgba('):
+        match = re.match(r'rgba\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*[\d.]+\s*\)', color_value, re.IGNORECASE)
+        if match:
+            r, g, b = [int(x) for x in match.groups()]
+            return f"rgb({r}, {g}, {b})"
+    
+    # If hex format, convert to RGB
+    if color_value.startswith('#'):
+        hex_color = color_value[1:]
+        if len(hex_color) == 3:
+            hex_color = f"{hex_color[0]*2}{hex_color[1]*2}{hex_color[2]*2}"
+        
+        try:
+            r = int(hex_color[0:2], 16)
+            g = int(hex_color[2:4], 16)
+            b = int(hex_color[4:6], 16)
+            return f"rgb({r}, {g}, {b})"
+        except ValueError:
+            pass
+    
+    # If HSL format, convert to RGB
+    if color_value.startswith('hsl('):
+        match = re.match(r'hsl\s*\(\s*(\d+)\s*,\s*(\d+)%\s*,\s*(\d+)%\s*\)', color_value, re.IGNORECASE)
+        if match:
+            h, s, l = [int(x) for x in match.groups()]
+            r, g, b = hsl_to_rgb(h, s, l)
+            return f"rgb({r}, {g}, {b})"
+    
+    # If named color, convert to RGB
+    named_colors = {
+        'black': 'rgb(0, 0, 0)', 'white': 'rgb(255, 255, 255)', 'red': 'rgb(255, 0, 0)',
+        'green': 'rgb(0, 128, 0)', 'blue': 'rgb(0, 0, 255)', 'yellow': 'rgb(255, 255, 0)',
+        'cyan': 'rgb(0, 255, 255)', 'magenta': 'rgb(255, 0, 255)', 'orange': 'rgb(255, 165, 0)',
+        'purple': 'rgb(128, 0, 128)', 'brown': 'rgb(165, 42, 42)', 'pink': 'rgb(255, 192, 203)',
+        'gray': 'rgb(128, 128, 128)', 'silver': 'rgb(192, 192, 192)', 'gold': 'rgb(255, 215, 0)',
+        'violet': 'rgb(238, 130, 238)'
+    }
+    
+    if color_value in named_colors:
+        return named_colors[color_value]
+    
+    # If we can't convert, return the original
+    return color_value
+
+
+def _to_rgba(color_value: str) -> str:
+    """Convert color to RGBA format."""
+    color_value = color_value.strip().lower()
+    
+    # If already RGBA format
+    if color_value.startswith('rgba('):
+        return color_value
+    
+    # If RGB format, convert to RGBA with full opacity
+    if color_value.startswith('rgb('):
+        match = re.match(r'rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)', color_value, re.IGNORECASE)
+        if match:
+            r, g, b = [int(x) for x in match.groups()]
+            return f"rgba({r}, {g}, {b}, 1.0)"
+    
+    # If hex format, convert to RGBA
+    if color_value.startswith('#'):
+        hex_color = color_value[1:]
+        if len(hex_color) == 3:
+            hex_color = f"{hex_color[0]*2}{hex_color[1]*2}{hex_color[2]*2}"
+        elif len(hex_color) == 8:  # Has alpha
+            try:
+                r = int(hex_color[0:2], 16)
+                g = int(hex_color[2:4], 16)
+                b = int(hex_color[4:6], 16)
+                a = int(hex_color[6:8], 16) / 255.0
+                return f"rgba({r}, {g}, {b}, {a:.3f})"
+            except ValueError:
+                pass
+        
+        try:
+            r = int(hex_color[0:2], 16)
+            g = int(hex_color[2:4], 16)
+            b = int(hex_color[4:6], 16)
+            return f"rgba({r}, {g}, {b}, 1.0)"
+        except ValueError:
+            pass
+    
+    # For other formats, convert to RGB first then RGBA
+    rgb = _to_rgb(color_value)
+    if rgb.startswith('rgb('):
+        return rgb.replace('rgb(', 'rgba(', 1).replace(')', ', 1.0)', 1)
+    
+    # If we can't convert, return the original
+    return color_value
+
+
+def _to_hsl(color_value: str) -> str:
+    """Convert color to HSL format."""
+    color_value = color_value.strip().lower()
+    
+    # If already HSL format
+    if color_value.startswith('hsl('):
+        return color_value
+    
+    # If hex format, convert to HSL
+    if color_value.startswith('#'):
+        hex_color = color_value[1:]
+        if len(hex_color) == 3:
+            hex_color = f"{hex_color[0]*2}{hex_color[1]*2}{hex_color[2]*2}"
+        
+        try:
+            r = int(hex_color[0:2], 16)
+            g = int(hex_color[2:4], 16)
+            b = int(hex_color[4:6], 16)
+            
+            h, s, l = rgb_to_hsl(r, g, b)
+            return f"hsl({h}, {s}%, {l}%)"
+        except ValueError:
+            pass
+    
+    # If RGB format, convert to HSL
+    if color_value.startswith('rgb('):
+        match = re.match(r'rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)', color_value, re.IGNORECASE)
+        if match:
+            r, g, b = [int(x) for x in match.groups()]
+            h, s, l = rgb_to_hsl(r, g, b)
+            return f"hsl({h}, {s}%, {l}%)"
+    
+    # If RGBA format, convert to HSL (ignore alpha)
+    if color_value.startswith('rgba('):
+        match = re.match(r'rgba\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*[\d.]+\s*\)', color_value, re.IGNORECASE)
+        if match:
+            r, g, b = [int(x) for x in match.groups()]
+            h, s, l = rgb_to_hsl(r, g, b)
+            return f"hsl({h}, {s}%, {l}%)"
+    
+    # If named color, convert to HSL
+    rgb = _to_rgb(color_value)
+    if rgb.startswith('rgb('):
+        match = re.match(r'rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)', rgb, re.IGNORECASE)
+        if match:
+            r, g, b = [int(x) for x in match.groups()]
+            h, s, l = rgb_to_hsl(r, g, b)
+            return f"hsl({h}, {s}%, {l}%)"
+    
+    # If we can't convert, return the original
+    return color_value
+
+
+def _to_named(color_value: str) -> str:
+    """Convert color to named format (if possible)."""
+    color_value = color_value.strip().lower()
+    
+    # First convert to hex to identify the color
+    hex_color = _to_hex(color_value)
+    
+    # Known named colors with their hex values
+    named_colors = {
+        '#000000': 'black', '#ffffff': 'white', '#ff0000': 'red', '#008000': 'green',
+        '#0000ff': 'blue', '#ffff00': 'yellow', '#00ffff': 'cyan', '#ff00ff': 'magenta',
+        '#ffa500': 'orange', '#800080': 'purple', '#a52a2a': 'brown', '#ffc0cb': 'pink',
+        '#808080': 'gray', '#c0c0c0': 'silver', '#ffd700': 'gold', '#ee82ee': 'violet'
+    }
+    
+    if hex_color in named_colors:
+        return named_colors[hex_color]
+    
+    # If we can't convert, return the original
+    return color_value
+
+
+def hsl_to_rgb(h: int, s: int, l: int) -> Tuple[int, int, int]:
+    """
+    Convert HSL color to RGB.
+    
+    Args:
+        h: Hue (0-360)
+        s: Saturation (0-100)
+        l: Lightness (0-100)
+        
+    Returns:
+        Tuple of (r, g, b) values in range 0-255
+    """
+    h /= 360.0
+    s /= 100.0
+    l /= 100.0
+    
+    if s == 0:
+        r = g = b = l
+    else:
+        def hue2rgb(p, q, t):
+            if t < 0: t += 1
+            if t > 1: t -= 1
+            if t < 1/6: return p + (q - p) * 6 * t
+            if t < 1/2: return q
+            if t < 2/3: return p + (q - p) * (2/3 - t) * 6
+            return p
+        
+        q = l * (1 + s) if l < 0.5 else l + s - l * s
+        p = 2 * l - q
+        r = hue2rgb(p, q, h + 1/3)
+        g = hue2rgb(p, q, h)
+        b = hue2rgb(p, q, h - 1/3)
+    
+    return round(r * 255), round(g * 255), round(b * 255)
+
+
+def rgb_to_hsl(r: int, g: int, b: int) -> Tuple[int, int, int]:
+    """
+    Convert RGB color to HSL.
+    
+    Args:
+        r: Red (0-255)
+        g: Green (0-255)
+        b: Blue (0-255)
+        
+    Returns:
+        Tuple of (h, s, l) values (h in 0-360, s and l in 0-100)
+    """
+    r /= 255.0
+    g /= 255.0
+    b /= 255.0
+    
+    max_val = max(r, g, b)
+    min_val = min(r, g, b)
+    diff = max_val - min_val
+    
+    # Lightness
+    l = (max_val + min_val) / 2
+    
+    # Saturation
+    if diff == 0:
+        s = 0
+    else:
+        s = diff / (2 - max_val - min_val) if l > 0.5 else diff / (max_val + min_val)
+    
+    # Hue
+    if diff == 0:
+        h = 0
+    elif max_val == r:
+        h = (g - b) / diff + (6 if g < b else 0)
+    elif max_val == g:
+        h = (b - r) / diff + 2
+    elif max_val == b:
+        h = (r - g) / diff + 4
+    
+    h = round(h * 60)
+    s = round(s * 100)
+    l = round(l * 100)
+    
+    return h, s, l
+
+
+def gtk_to_qt_colors(gtk_colors: Dict[str, str]) -> Dict[str, str]:
+    """
+    Translate GTK color variables to Qt equivalents.
+    
+    Args:
+        gtk_colors: Dictionary of GTK color names to values
+        
+    Returns:
+        Dictionary of Qt color names to values
+    """
+    # Mapping from GTK to Qt color variables
+    gtk_to_qt_mapping = {
+        "theme_bg_color": "BackgroundNormal",
+        "theme_fg_color": "ForegroundNormal", 
+        "theme_base_color": "Base",
+        "theme_text_color": "Text",
+        "theme_selected_bg_color": "Highlight",
+        "theme_selected_fg_color": "HighlightedText",
+        "insensitive_bg_color": "BackgroundInactive",
+        "insensitive_fg_color": "ForegroundInactive",
+        "link_color": "Link",
+        "visited_link_color": "VisitedLink",
+        "success_color": "ForegroundPositive",
+        "warning_color": "ForegroundNeutral",
+        "error_color": "ForegroundNegative"
+    }
+    
+    qt_colors = {}
+    
+    for gtk_color, qt_color in gtk_to_qt_mapping.items():
+        if gtk_color in gtk_colors:
+            try:
+                # Convert GTK color format to Qt format (RGB values)
+                gtk_color_value = gtk_colors[gtk_color]
+                qt_color_value = gtk_color_to_qt_format(gtk_color_value)
+                qt_colors[qt_color] = qt_color_value
+            except ColorValidationError as e:
+                # If translation fails, skip this color
+                continue
+    
+    return qt_colors
+
+
+def gtk_color_to_qt_format(gtk_color: str) -> str:
+    """
+    Convert a GTK color format to Qt RGB format (r,g,b).
+    
+    Args:
+        gtk_color: Color in GTK format (e.g., #RRGGBB, rgba(...))
+        
+    Returns:
+        Color in Qt format (r,g,b) where r,g,b are 0-255
+        
+    Raises:
+        ColorValidationError: If color format is invalid
+    """
+    gtk_color = gtk_color.strip()
+    
+    # Handle hex format (#RRGGBB or #RGB)
+    if gtk_color.startswith('#'):
+        gtk_color = gtk_color[1:]  # Remove #
+        
+        if len(gtk_color) == 3:  # #RGB format
+            gtk_color = ''.join([c*2 for c in gtk_color])  # Expand to #RRGGBB
+        elif len(gtk_color) != 6:
+            raise ColorValidationError(
+                "unknown", 
+                gtk_color, 
+                f"Invalid hex color format: {gtk_color}"
+            )
+        
+        try:
+            r = int(gtk_color[0:2], 16)
+            g = int(gtk_color[2:4], 16)
+            b = int(gtk_color[4:6], 16)
+            return f"{r},{g},{b}"
+        except ValueError:
+            raise ColorValidationError(
+                "unknown", 
+                gtk_color, 
+                f"Invalid hex color: {gtk_color}"
+            )
+    
+    # Handle rgb() format
+    elif gtk_color.lower().startswith('rgb('):
+        # Extract numbers from rgb(r, g, b)
+        match = re.search(r'rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)', gtk_color, re.IGNORECASE)
+        if match:
+            r, g, b = match.groups()
+            return f"{r},{g},{b}"
+        else:
+            raise ColorValidationError(
+                "unknown", 
+                gtk_color, 
+                f"Invalid RGB format: {gtk_color}"
+            )
+    
+    # Handle rgba() format (ignore alpha)
+    elif gtk_color.lower().startswith('rgba('):
+        # Extract numbers from rgba(r, g, b, a)
+        match = re.search(r'rgba\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*[\d.]+\s*)?\)', gtk_color, re.IGNORECASE)
+        if match:
+            r, g, b = match.groups()
+            return f"{r},{g},{b}"
+        else:
+            raise ColorValidationError(
+                "unknown", 
+                gtk_color, 
+                f"Invalid RGBA format: {gtk_color}"
+            )
+    
+    # For other formats, raise an error
+    raise ColorValidationError(
+        "unknown", 
+        gtk_color, 
+        f"Unsupported color format: {gtk_color}"
+    )

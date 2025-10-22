@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Unified Theming
+Comment=Apply consistent themes across GTK, Qt, and containerized applications
+Exec=unified-theming-gui
+Icon=unified-theming
+Terminal=false
+Type=Application
+Categories=Settings;DesktopSettings;GTK;
+Keywords=theme;gtk;qt;desktop;customization;
+StartupNotify=true
