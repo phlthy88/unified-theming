@@ -179,7 +179,7 @@ def list(ctx, targets: Tuple[str, ...], format: str):
 # ============================================================================
 
 
-@cli.command(name="apply")
+@cli.command(name="apply_theme")
 @click.argument("theme_name")
 @click.option(
     "--targets",
@@ -202,7 +202,6 @@ def apply(ctx, theme_name: str, targets: Tuple[str, ...], dry_run: bool):
 
     \b
     Examples:
-        unified-theming apply_theme Nord
         unified-theming apply_theme Nord
         unified-theming apply_theme Nord --dry-run
         unified-theming apply_theme Dracula --targets gtk4 --targets libadwaita

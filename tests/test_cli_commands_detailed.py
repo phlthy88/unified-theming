@@ -221,7 +221,7 @@ class TestApplyCommand:
             )
             mock_manager_class.return_value = mock_manager
 
-            result = cli_runner.invoke(cli, ["apply", "Adwaita-dark"])
+            result = cli_runner.invoke(cli, ["apply_theme", "Adwaita-dark"])
             assert result.exit_code == 0
             assert "Applying theme 'Adwaita-dark'..." in result.output
             assert "✓ Theme 'Adwaita-dark' applied successfully!" in result.output
@@ -247,7 +247,7 @@ class TestApplyCommand:
             mock_manager_class.return_value = mock_manager
 
             result = cli_runner.invoke(
-                cli, ["apply", "Adwaita-dark", "--targets", "all"]
+                cli, ["apply_theme", "Adwaita-dark", "--targets", "all"]
             )
             # The command should execute without CLI argument errors
             assert result.exit_code == 0
@@ -261,7 +261,7 @@ class TestApplyCommand:
         ) as mock_manager_class:
             mock_manager_class.side_effect = Exception("Mock error")
 
-            result = cli_runner.invoke(cli, ["apply", "Adwaita-dark"])
+            result = cli_runner.invoke(cli, ["apply_theme", "Adwaita-dark"])
             assert result.exit_code == 1
             assert "✗ Error applying theme:" in result.output
 
@@ -285,7 +285,7 @@ class TestApplyCommand:
             )
             mock_manager_class.return_value = mock_manager
 
-            result = cli_runner.invoke(cli, ["apply", "Adwaita-dark"])
+            result = cli_runner.invoke(cli, ["apply_theme", "Adwaita-dark"])
             assert (
                 result.exit_code == 0
             )  # Even with failures, exit code is 0 if no exception
@@ -599,7 +599,7 @@ class TestArgumentParsing:
 
     def test_apply_command_missing_theme_name(self, cli_runner):
         """Test apply command when theme name is missing."""
-        result = cli_runner.invoke(cli, ["apply"])
+        result = cli_runner.invoke(cli, ["apply_theme"])
         # Should fail because theme name is required
         assert result.exit_code != 0
         assert "Usage:" in result.output or "Error:" in result.output

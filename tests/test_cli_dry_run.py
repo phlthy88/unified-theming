@@ -72,7 +72,7 @@ class TestDryRunBasicFunctionality:
 
     def test_dry_run_flag_exists(self, cli_runner):
         """Test that --dry-run flag is recognized by the CLI."""
-        result = cli_runner.invoke(cli, ["apply", "--help"])
+        result = cli_runner.invoke(cli, ["apply_theme", "--help"])
         assert result.exit_code == 0
         assert "--dry-run" in result.output
         assert "Preview changes without applying" in result.output
@@ -149,7 +149,7 @@ class TestDryRunWithTargets:
             mock_manager.plan_changes.return_value = mock_plan_result
 
             result = cli_runner.invoke(
-                cli, ["apply_theme", "Nord", "--target", "gtk4", "--dry-run"]
+                cli, ["apply_theme", "Nord", "--targets", "gtk4", "--dry-run"]
             )
 
             # Debug output
@@ -180,9 +180,9 @@ class TestDryRunWithTargets:
                 [
                     "apply_theme",
                     "Nord",
-                    "--target",
+                    "--targets",
                     "gtk4",
-                    "--target",
+                    "--targets",
                     "qt5",
                     "--dry-run",
                 ],
@@ -204,7 +204,7 @@ class TestDryRunWithTargets:
             mock_manager.plan_changes.return_value = mock_plan_result
 
             result = cli_runner.invoke(
-                cli, ["apply_theme", "Nord", "--target", "all", "--dry-run"]
+                cli, ["apply_theme", "Nord", "--targets", "all", "--dry-run"]
             )
 
             # When 'all' is specified, targets should be None
@@ -296,7 +296,7 @@ class TestDryRunDataContracts:
             mock_manager_class.return_value = mock_manager
             mock_manager.plan_changes.return_value = plan_result
 
-            result = cli_runner.invoke(cli, ["apply", "TestTheme", "--dry-run"])
+            result = cli_runner.invoke(cli, ["apply_theme", "TestTheme", "--dry-run"])
 
             # Verify validation messages are displayed
             assert "Validation:" in result.output
@@ -321,7 +321,7 @@ class TestDryRunErrorHandling:
                 "NonExistentTheme", searched_paths=[Path("/usr/share/themes")]
             )
 
-            result = cli_runner.invoke(cli, ["apply", "NonExistentTheme", "--dry-run"])
+            result = cli_runner.invoke(cli, ["apply_theme", "NonExistentTheme", "--dry-run"])
 
             # Verify error is displayed
             assert result.exit_code == 1
@@ -337,7 +337,7 @@ class TestDryRunErrorHandling:
             mock_manager_class.return_value = mock_manager
             mock_manager.plan_changes.side_effect = Exception("Unexpected error")
 
-            result = cli_runner.invoke(cli, ["apply", "TestTheme", "--dry-run"])
+            result = cli_runner.invoke(cli, ["apply_theme", "TestTheme", "--dry-run"])
 
             # Verify error is displayed
             assert result.exit_code == 1
@@ -361,7 +361,7 @@ class TestDryRunErrorHandling:
             mock_manager_class.return_value = mock_manager
             mock_manager.plan_changes.return_value = plan_result
 
-            result = cli_runner.invoke(cli, ["apply", "EmptyTheme", "--dry-run"])
+            result = cli_runner.invoke(cli, ["apply_theme", "EmptyTheme", "--dry-run"])
 
             # Verify appropriate message is displayed
             assert "No changes would be made" in result.output
@@ -391,7 +391,7 @@ class TestDryRunWarnings:
             mock_manager_class.return_value = mock_manager
             mock_manager.plan_changes.return_value = plan_result
 
-            result = cli_runner.invoke(cli, ["apply", "TestTheme", "--dry-run"])
+            result = cli_runner.invoke(cli, ["apply_theme", "TestTheme", "--dry-run"])
 
             # Verify warnings are displayed
             assert "Warnings:" in result.output

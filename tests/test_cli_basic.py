@@ -27,14 +27,14 @@ def test_cli_list_command(cli_runner):
 
 
 def test_cli_apply_theme_missing_name(cli_runner):
-    """Test 'apply' command without theme name."""
-    result = cli_runner.invoke(cli, ["apply"])
+    """Test 'apply_theme' command without theme name."""
+    result = cli_runner.invoke(cli, ["apply_theme"])
     assert result.exit_code != 0  # Should fail without theme name
 
 
 def test_cli_apply_theme_nonexistent(cli_runner):
-    """Test 'apply' command with non-existent theme."""
-    result = cli_runner.invoke(cli, ["apply", "NonExistentTheme"])
+    """Test 'apply_theme' command with non-existent theme."""
+    result = cli_runner.invoke(cli, ["apply_theme", "NonExistentTheme"])
     assert result.exit_code != 0
 
 
