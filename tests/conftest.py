@@ -4,6 +4,8 @@ Shared pytest fixtures for Unified Theming Application tests.
 
 import pytest
 
+# Import integration test fixtures
+from tests.fixtures.integration_fixtures import *  # noqa: F401,F403
 from unified_theming.core.parser import UnifiedThemeParser
 from unified_theming.core.types import ThemeData, Toolkit
 
