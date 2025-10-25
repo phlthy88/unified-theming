@@ -209,7 +209,9 @@ class TestDryRunWithTargets:
             )
 
             # When 'all' is specified, it maps to all handlers
-            mock_manager.plan_changes.assert_called_once_with("Nord", targets=["gtk", "qt", "flatpak", "snap"])
+            mock_manager.plan_changes.assert_called_once_with(
+                "Nord", targets=["gtk", "qt", "flatpak", "snap"]
+            )
             assert result.exit_code == 0
 
 
@@ -322,7 +324,9 @@ class TestDryRunErrorHandling:
                 "NonExistentTheme", searched_paths=[Path("/usr/share/themes")]
             )
 
-            result = cli_runner.invoke(cli, ["apply_theme", "NonExistentTheme", "--dry-run"])
+            result = cli_runner.invoke(
+                cli, ["apply_theme", "NonExistentTheme", "--dry-run"]
+            )
 
             # Verify error is displayed
             assert result.exit_code == 1
