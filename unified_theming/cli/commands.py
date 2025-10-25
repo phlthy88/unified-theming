@@ -46,7 +46,7 @@ def map_toolkits_to_handlers(targets: Tuple[str, ...]) -> tuple[List[str], List[
         else:
             unknown_targets.append(target)
 
-    return (list(handlers), unknown_targets)
+    return ([*handlers], unknown_targets)
 
 
 # Version information

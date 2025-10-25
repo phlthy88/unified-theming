@@ -181,7 +181,7 @@ class TestListCommand:
             mock_manager.discover_themes.return_value = sample_themes
             mock_manager_class.return_value = mock_manager
 
-            result = cli_runner.invoke(cli, ["list", "--toolkit", "gtk3"])
+            result = cli_runner.invoke(cli, ["list", "--targets", "gtk3"])
             assert result.exit_code == 0
             # Should contain Adwaita-dark (has GTK3 support) but may also contain Nord
             assert "Adwaita-dark" in result.output

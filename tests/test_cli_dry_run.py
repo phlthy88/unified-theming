@@ -162,8 +162,8 @@ class TestDryRunWithTargets:
             if mock_manager.plan_changes.called:
                 print(f"plan_changes call_args: {mock_manager.plan_changes.call_args}")
 
-            # Verify plan_changes was called with correct targets
-            mock_manager.plan_changes.assert_called_once_with("Nord", targets=["gtk4"])
+            # Verify plan_changes was called with correct targets (gtk4 maps to gtk handler)
+            mock_manager.plan_changes.assert_called_once_with("Nord", targets=["gtk"])
             assert result.exit_code == 0
 
     def test_dry_run_with_multiple_targets(self, cli_runner, mock_plan_result):
@@ -188,10 +188,11 @@ class TestDryRunWithTargets:
                 ],
             )
 
-            # Verify plan_changes was called with correct targets
-            mock_manager.plan_changes.assert_called_once_with(
-                "Nord", targets=["gtk4", "qt5"]
-            )
+            # Verify plan_changes was called with correct targets (gtk4->gtk, qt5->qt)
+            mock_manager.plan_changes.assert_called_once()
+            call_args = mock_manager.plan_changes.call_args
+            assert call_args[0] == ("Nord",)
+            assert set(call_args[1]["targets"]) == {"gtk", "qt"}
             assert result.exit_code == 0
 
     def test_dry_run_with_all_target(self, cli_runner, mock_plan_result):
@@ -207,8 +208,8 @@ class TestDryRunWithTargets:
                 cli, ["apply_theme", "Nord", "--targets", "all", "--dry-run"]
             )
 
-            # When 'all' is specified, targets should be None
-            mock_manager.plan_changes.assert_called_once_with("Nord", targets=None)
+            # When 'all' is specified, it maps to all handlers
+            mock_manager.plan_changes.assert_called_once_with("Nord", targets=["gtk", "qt", "flatpak", "snap"])
             assert result.exit_code == 0
 
 
