@@ -188,8 +188,8 @@ class QtHandler(BaseHandler):
                 re.IGNORECASE,
             )
             if match:
-                r, g, b = match.groups()
-                return f"{r},{g},{b}"
+                r_str, g_str, b_str = match.groups()
+                return f"{r_str},{g_str},{b_str}"
             else:
                 raise ColorTranslationError(
                     "gtk", "qt", gtk_color, f"Invalid RGB format: {gtk_color}"
@@ -206,8 +206,8 @@ class QtHandler(BaseHandler):
                 re.IGNORECASE,
             )
             if match:
-                r, g, b = match.groups()
-                return f"{r},{g},{b}"
+                r_str, g_str, b_str = match.groups()
+                return f"{r_str},{g_str},{b_str}"
             else:
                 raise ColorTranslationError(
                     "gtk", "qt", gtk_color, f"Invalid RGBA format: {gtk_color}"

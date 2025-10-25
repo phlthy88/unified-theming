@@ -4,7 +4,6 @@ Tests for Unified Theme Parser.
 
 import pytest
 
-
 from unified_theming.core.types import Toolkit
 
 

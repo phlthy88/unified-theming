@@ -2,11 +2,9 @@
 
 import subprocess
 from pathlib import Path
-
 from unittest.mock import Mock, patch
 
 import pytest
-
 
 from unified_theming.core.types import ThemeData, Toolkit, ValidationResult
 from unified_theming.handlers.flatpak_handler import FlatpakHandler

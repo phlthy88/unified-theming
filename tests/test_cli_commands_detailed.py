@@ -3,29 +3,30 @@ Tests for unified_theming.cli.commands module.
 Tests cover command invocation, argument parsing, and interactions with UnifiedThemeManager.
 """
 
+import json
+from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
 from click.testing import CliRunner
-import json
-from unittest.mock import Mock, patch, MagicMock
-from pathlib import Path
 
 from unified_theming.cli.commands import (
-    cli,
-    list,
     apply,
+    cli,
     current,
+    list,
+    main,
     rollback,
     validate,
-    main,
 )
 from unified_theming.core.types import (
-    ThemeInfo,
-    Toolkit,
     ApplicationResult,
     HandlerResult,
-    ValidationResult,
-    ValidationMessage,
+    ThemeInfo,
+    Toolkit,
     ValidationLevel,
+    ValidationMessage,
+    ValidationResult,
 )
 
 
@@ -403,8 +404,9 @@ class TestRollbackCommand:
 
     def test_rollback_command_list_backups(self, cli_runner):
         """Test rollback command with list-backups option."""
-        from unified_theming.core.types import Backup
         from datetime import datetime
+
+        from unified_theming.core.types import Backup
 
         backup = Backup(
             backup_id="backup_test_123",

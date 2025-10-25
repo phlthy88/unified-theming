@@ -225,7 +225,7 @@ class UnifiedThemeManager:
                 logger.error(f"Rollback failed: {e}")
 
         # Create and return the application result
-        result = ApplicationResult(
+        application_result = ApplicationResult(
             theme_name=theme_name,
             overall_success=overall_success,
             handler_results=theme_results,
@@ -235,7 +235,7 @@ class UnifiedThemeManager:
         logger.info(
             f"Theme application completed with overall success: {overall_success}"
         )
-        return result
+        return application_result
 
     def plan_changes(
         self, theme_name: str, targets: Optional[List[str]] = None

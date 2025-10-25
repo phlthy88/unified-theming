@@ -6,7 +6,7 @@ error handling and fallback mechanisms.
 """
 
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import chardet
 
@@ -133,7 +133,7 @@ def write_file_with_backup(
                 backup_path.unlink()
             except:
                 pass
-        raise FileWriteError(f"Failed to write file {path}: {str(e)}", path=path)
+        raise FileWriteError(path, f"Failed to write file: {str(e)}")
 
 
 def ensure_directory_exists(dir_path: Union[Path, str]) -> bool:
@@ -157,7 +157,7 @@ def ensure_directory_exists(dir_path: Union[Path, str]) -> bool:
 
 
 def safe_file_operation(
-    file_path: Union[Path, str], operation, *args, **kwargs
+    file_path: Union[Path, str], operation: Callable, *args: Any, **kwargs: Any
 ) -> bool:
     """
     Perform a file operation safely with proper error handling.

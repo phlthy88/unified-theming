@@ -2,21 +2,23 @@
 Tests for Unified Theme Manager.
 """
 
-import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-from unified_theming.core.manager import UnifiedThemeManager
-from unified_theming.core.types import (
-    ThemeInfo,
-    Toolkit,
-    ValidationResult,
-    ValidationMessage,
-    ValidationLevel,
-    HandlerResult,
-    ApplicationResult,
-)
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
+
 from unified_theming.core.exceptions import (
     ThemeNotFoundError,
+)
+from unified_theming.core.manager import UnifiedThemeManager
+from unified_theming.core.types import (
+    ApplicationResult,
+    HandlerResult,
+    ThemeInfo,
+    Toolkit,
+    ValidationLevel,
+    ValidationMessage,
+    ValidationResult,
 )
 
 

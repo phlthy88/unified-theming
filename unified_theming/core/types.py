@@ -385,7 +385,7 @@ class PlanResult:
     warnings: List[str] = field(default_factory=list)
     """Warnings about the planned operation."""
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Calculate derived fields."""
         self.estimated_files_affected = len(
             set(change.file_path for change in self.planned_changes)

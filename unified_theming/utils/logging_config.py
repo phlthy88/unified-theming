@@ -51,7 +51,7 @@ class ColoredFormatter(logging.Formatter):
         self,
         fmt: Optional[str] = None,
         datefmt: Optional[str] = None,
-        use_colors: bool = True,
+        use_colors: Optional[bool] = True,
     ):
         """
         Initialize formatter.
@@ -214,7 +214,7 @@ def get_logger(name: str) -> logging.Logger:
 
 def log_exception(
     logger: logging.Logger, exception: Exception, message: str = "An error occurred"
-):
+) -> None:
     """
     Log an exception with full traceback.
 
@@ -232,7 +232,7 @@ def log_exception(
     logger.error(f"{message}: {exception}", exc_info=True)
 
 
-def set_log_level(level: str):
+def set_log_level(level: str) -> None:
     """
     Change the log level at runtime.
 

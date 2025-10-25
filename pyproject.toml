@@ -91,17 +91,10 @@ disallow_untyped_defs = true
 [[tool.mypy.overrides]]
 module = [
     "unified_theming.gui.*",
-    "unified_theming.utils.color",
-    "unified_theming.utils.logging_config",
-    "unified_theming.utils.file",
     "unified_theming.handlers.snap_handler",
     "unified_theming.handlers.flatpak_handler",
     "unified_theming.handlers.gtk_handler",
     "unified_theming.handlers.qt_handler",
-    "unified_theming.core.exceptions",
-    "unified_theming.core.config",
-    "unified_theming.core.manager",
-    "unified_theming.core.types",
     "unified_theming.cli.commands",
 ]
 disallow_untyped_defs = false

@@ -46,9 +46,9 @@ def validate_color_format(color_value: str) -> bool:
         color_value,
     )
     if rgba_match:
-        r, g, b, a = rgba_match.groups()
-        r, g, b = int(r), int(g), int(b)
-        a = float(a)
+        r_str, g_str, b_str, a_str = rgba_match.groups()
+        r, g, b = int(r_str), int(g_str), int(b_str)
+        a = float(a_str)
         # RGB values must be between 0 and 255, alpha between 0 and 1
         if 0 <= r <= 255 and 0 <= g <= 255 and 0 <= b <= 255 and 0 <= a <= 1:
             return True
@@ -71,9 +71,9 @@ def validate_color_format(color_value: str) -> bool:
         color_value,
     )
     if hsla_match:
-        h, s, l, a = hsla_match.groups()
-        h, s, l = int(h), int(s), int(l)
-        a = float(a)
+        h_str, s_str, l_str, a_str = hsla_match.groups()
+        h, s, l = int(h_str), int(s_str), int(l_str)
+        a = float(a_str)
         # H value must be 0-360, S and L must be 0-100, alpha must be 0-1
         if 0 <= h <= 360 and 0 <= s <= 100 and 0 <= l <= 100 and 0 <= a <= 1:
             return True
@@ -514,15 +514,15 @@ def hsl_to_rgb(h: int, s: int, l: int) -> Tuple[int, int, int]:
     Returns:
         Tuple of (r, g, b) values in range 0-255
     """
-    h /= 360.0
-    s /= 100.0
-    l /= 100.0
+    h_norm = h / 360.0
+    s_norm = s / 100.0
+    l_norm = l / 100.0
 
-    if s == 0:
-        r = g = b = l
+    if s_norm == 0:
+        r = g = b = l_norm
     else:
 
-        def hue2rgb(p, q, t):
+        def hue2rgb(p: float, q: float, t: float) -> float:
             if t < 0:
                 t += 1
             if t > 1:
@@ -535,11 +535,11 @@ def hsl_to_rgb(h: int, s: int, l: int) -> Tuple[int, int, int]:
                 return p + (q - p) * (2 / 3 - t) * 6
             return p
 
-        q = l * (1 + s) if l < 0.5 else l + s - l * s
-        p = 2 * l - q
-        r = hue2rgb(p, q, h + 1 / 3)
-        g = hue2rgb(p, q, h)
-        b = hue2rgb(p, q, h - 1 / 3)
+        q = l_norm * (1 + s_norm) if l_norm < 0.5 else l_norm + s_norm - l_norm * s_norm
+        p = 2 * l_norm - q
+        r = hue2rgb(p, q, h_norm + 1 / 3)
+        g = hue2rgb(p, q, h_norm)
+        b = hue2rgb(p, q, h_norm - 1 / 3)
 
     return round(r * 255), round(g * 255), round(b * 255)
 
@@ -556,38 +556,42 @@ def rgb_to_hsl(r: int, g: int, b: int) -> Tuple[int, int, int]:
     Returns:
         Tuple of (h, s, l) values (h in 0-360, s and l in 0-100)
     """
-    r /= 255.0
-    g /= 255.0
-    b /= 255.0
+    r_norm = r / 255.0
+    g_norm = g / 255.0
+    b_norm = b / 255.0
 
-    max_val = max(r, g, b)
-    min_val = min(r, g, b)
+    max_val = max(r_norm, g_norm, b_norm)
+    min_val = min(r_norm, g_norm, b_norm)
     diff = max_val - min_val
 
     # Lightness
-    l = (max_val + min_val) / 2
+    l_val = (max_val + min_val) / 2
 
     # Saturation
     if diff == 0:
-        s = 0
+        s_val = 0.0
     else:
-        s = diff / (2 - max_val - min_val) if l > 0.5 else diff / (max_val + min_val)
+        s_val = (
+            diff / (2 - max_val - min_val)
+            if l_val > 0.5
+            else diff / (max_val + min_val)
+        )
 
     # Hue
     if diff == 0:
-        h = 0
-    elif max_val == r:
-        h = (g - b) / diff + (6 if g < b else 0)
-    elif max_val == g:
-        h = (b - r) / diff + 2
-    elif max_val == b:
-        h = (r - g) / diff + 4
+        h_val = 0.0
+    elif max_val == r_norm:
+        h_val = (g_norm - b_norm) / diff + (6 if g_norm < b_norm else 0)
+    elif max_val == g_norm:
+        h_val = (b_norm - r_norm) / diff + 2
+    elif max_val == b_norm:
+        h_val = (r_norm - g_norm) / diff + 4
 
-    h = round(h * 60)
-    s = round(s * 100)
-    l = round(l * 100)
+    h_result = round(h_val * 60)
+    s_result = round(s_val * 100)
+    l_result = round(l_val * 100)
 
-    return h, s, l
+    return h_result, s_result, l_result
 
 
 def gtk_to_qt_colors(gtk_colors: Dict[str, str]) -> Dict[str, str]:
@@ -676,8 +680,8 @@ def gtk_color_to_qt_format(gtk_color: str) -> str:
             r"rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)", gtk_color, re.IGNORECASE
         )
         if match:
-            r, g, b = match.groups()
-            return f"{r},{g},{b}"
+            r_str, g_str, b_str = match.groups()
+            return f"{r_str},{g_str},{b_str}"
         else:
             raise ColorValidationError(
                 "unknown", gtk_color, f"Invalid RGB format: {gtk_color}"
@@ -692,8 +696,8 @@ def gtk_color_to_qt_format(gtk_color: str) -> str:
             re.IGNORECASE,
         )
         if match:
-            r, g, b = match.groups()
-            return f"{r},{g},{b}"
+            r_str, g_str, b_str = match.groups()
+            return f"{r_str},{g_str},{b_str}"
         else:
             raise ColorValidationError(
                 "unknown", gtk_color, f"Invalid RGBA format: {gtk_color}"

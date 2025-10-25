@@ -6,20 +6,18 @@ parses theme metadata, extracts color palettes, and validates themes.
 """
 
 import re
-
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
 from ..core.exceptions import (
+    InvalidThemeError,
     ThemeDiscoveryError,
     ThemeNotFoundError,
-    InvalidThemeError,
 )
-from ..core.types import ThemeInfo, Toolkit, ColorPalette, ValidationResult
+from ..core.types import ColorPalette, ThemeInfo, Toolkit, ValidationResult
 from ..utils.file import read_file_with_fallback
 from ..utils.logging_config import get_logger
 from ..utils.validation import validate_css_syntax
-
 
 logger = get_logger(__name__)
 

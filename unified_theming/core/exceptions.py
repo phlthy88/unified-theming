@@ -580,7 +580,7 @@ def format_exception_chain(exception: Exception) -> str:
         Formatted string with exception chain
     """
     messages = []
-    current = exception
+    current: Optional[BaseException] = exception
 
     while current is not None:
         if isinstance(current, UnifiedThemingError):

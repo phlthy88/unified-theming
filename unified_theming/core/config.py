@@ -10,7 +10,7 @@ import shutil
 import tarfile
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from ..core.exceptions import (
     BackupError,
@@ -85,7 +85,7 @@ class ConfigManager:
             files_to_backup = self._get_config_files_to_backup()
 
             # Backup each file/directory
-            backup_metadata = {
+            backup_metadata: Dict[str, Any] = {
                 "backup_id": backup_id,
                 "timestamp": metadata_timestamp,
                 "theme_name": theme_name,
@@ -182,7 +182,7 @@ class ConfigManager:
             config_files[Toolkit.FLATPAK] = flatpak_files
 
         # Snap configurations (if any specific configs exist)
-        snap_files = []
+        snap_files: List[Path] = []
         # No standard snap configuration file for theming, but we could add if needed
         if snap_files:
             config_files[Toolkit.SNAP] = snap_files
@@ -350,7 +350,7 @@ class ConfigManager:
 
         return state
 
-    def save_config(self, config_data: Dict[str, any]) -> None:
+    def save_config(self, config_data: Dict[str, Any]) -> None:
         """
         Save configuration data to the config file.
 
@@ -366,7 +366,7 @@ class ConfigManager:
             logger.error(f"Failed to save configuration: {e}")
             raise ConfigurationError(f"Failed to save configuration: {str(e)}")
 
-    def load_config(self) -> Dict[str, any]:
+    def load_config(self) -> Dict[str, Any]:
         """
         Load configuration data from the config file.
 
@@ -382,12 +382,12 @@ class ConfigManager:
             with open(config_file, "r") as f:
                 config_data = json.load(f)
             logger.info(f"Configuration loaded from {config_file}")
-            return config_data
+            return config_data  # type: ignore
         except Exception as e:
             logger.error(f"Failed to load configuration: {e}")
             raise ConfigurationError(f"Failed to load configuration: {str(e)}")
 
-    def get_config_value(self, key: str, default=None):
+    def get_config_value(self, key: str, default: Any = None) -> Any:
         """
         Get a specific configuration value.
 
