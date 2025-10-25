@@ -45,6 +45,7 @@ gui = [
 
   [project.scripts]
   unified-theming = "unified_theming.cli.commands:main"
+  unified-theming-gui = "unified_theming.gui.launcher:main"
 
 [project.urls]
 Homepage = "https://github.com/yourusername/unified-theming"
