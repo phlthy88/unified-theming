@@ -11,16 +11,16 @@ license = {text = "MIT"}
 authors = [
     {name = "Joshua Sadowsky", email = "joshua@example.com"}
 ]
- classifiers = [
-     "Development Status :: 3 - Alpha",
-     "Intended Audience :: End Users/Desktop",
-     "Programming Language :: Python :: 3",
-     "Programming Language :: Python :: 3.10",
-     "Programming Language :: Python :: 3.11",
-     "Programming Language :: Python :: 3.12",
-     "Topic :: Desktop Environment",
-     "Topic :: Utilities"
- ]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Desktop Environment",
+    "Topic :: Utilities"
+]
 requires-python = ">=3.10"
 dependencies = [
     "click>=8.0.0",
@@ -43,9 +43,9 @@ gui = [
     "PyGObject>=3.42.0"
 ]
 
-  [project.scripts]
-  unified-theming = "unified_theming.cli.commands:main"
-  unified-theming-gui = "unified_theming.gui.launcher:main"
+[project.scripts]
+unified-theming = "unified_theming.cli.commands:main"
+unified-theming-gui = "unified_theming.gui.launcher:main"
 
 [project.urls]
 Homepage = "https://github.com/yourusername/unified-theming"

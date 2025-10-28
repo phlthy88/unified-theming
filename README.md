@@ -16,7 +16,7 @@ Unified Theming is a comprehensive solution for applying consistent themes acros
 - ✅ **Containerized Apps:** Full support for Flatpak applications
 - ✅ **CLI Interface:** Full-featured command-line interface with Click
 - ✅ **Safety Features:** Automatic backup, rollback, validation, and graceful degradation
-- 🚧 **GUI Interface:** Modern GTK4/Libadwaita interface (Phase 3 - planned)
+- 🚧 **GUI Interface:** Modern GTK4/Libadwaita interface is under development.
 
 ## Technology Stack
 
@@ -30,8 +30,8 @@ Unified Theming is a comprehensive solution for applying consistent themes acros
 
 ## Installation
 
+### From Source (Recommended for v0.5.0)
 ```bash
-# Clone the repository
 git clone https://github.com/phlthy88/unified-theming.git
 cd unified-theming
 
@@ -41,6 +41,11 @@ source venv/bin/activate
 
 # Install in development mode with all dependencies
 pip install -e ".[dev,gui]"
+```
+
+### System Dependencies (Ubuntu/Debian)
+```bash
+sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-4.0
 ```
 
 ## Usage
@@ -100,29 +105,16 @@ mypy unified_theming/
 
 ## Project Status
 
-### Current Phase: Phase 2 - Core Engineering (70% Complete)
-- ✅ **Week 1:** Foundation & Architecture (100%)
-- ✅ **Week 2:** Core Module Testing (100%)
-  - Color utilities: 86% coverage
-  - Theme manager: 93% coverage
-  - Configuration: 78% coverage
-  - Flatpak handler: 100% coverage
-- 🚧 **Week 3:** Integration Testing (In Progress)
-  - Integration tests: 100% coverage
-  - CLI testing: Ongoing
-  - Handler enhancement: LibAdapta/Zorin OS support planned
-
-### Test Coverage: 56% Overall (181/181 tests passing)
+The project is currently in alpha. The CLI is feature-complete and stable, while the GUI is under active development.
 
 ### Next Milestones
-- **Phase 2 Completion:** Week 3 (reach 70%+ coverage)
-- **Phase 3:** GUI Development (GTK4/Libadwaita interface)
-- **v1.0 Release:** Q1 2026
+- **GUI Development:** Implementation of the GTK4/Libadwaita interface.
+- **v1.0 Release:** Official stable release with GUI and packaging.
 
 ## Contributing
 
-Contributions are welcome! This project uses a multi-agent development workflow with Claude Code, Qwen Coder, and Opencode AI. See `WEEK3_MULTIAGENT_WORKFLOW.md` for the current development process.
+Contributions are welcome! Please open an issue or submit a pull request on GitHub.
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) file for details
+MIT License - See [LICENSE](LICENSE) file for details.

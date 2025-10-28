@@ -1,2 +1,0 @@
-[console_scripts]
-unified-theming = unified_theming.cli.commands:main

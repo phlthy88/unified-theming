@@ -10,6 +10,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
+
 import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -369,30 +370,8 @@ def main():
     """
     Main entry point for the GUI application.
     """
-    try:
-        app = ThemeApp()
-        return app.run(sys.argv)
-    except ImportError as e:
-        if "gi" in str(e):
-            print("Error: GTK4/PyGObject not available.")
-            print("\nTo use the GUI, install system dependencies:")
-            print("\nUbuntu/Debian:")
-            print("  sudo apt install libgtk-4-dev libadwaita-1-dev python3-gi")
-            print("  pip install -e '.[gui]'")
-            print("\nFedora/RHEL:")
-            print("  sudo dnf install gtk4-devel libadwaita-devel python3-gobject")
-            print("  pip install -e '.[gui]'")
-            print("\nAlternatively, use the CLI:")
-            print("  unified-theming list")
-            print("  unified-theming apply_theme <theme_name>")
-            return 1
-        else:
-            raise
-    except Exception as e:
-        print(f"Error starting GUI: {e}")
-        print("\nTry using the CLI instead:")
-        print("  unified-theming --help")
-        return 1
+    app = ThemeApp()
+    return app.run(sys.argv)
 
 
 if __name__ == "__main__":
