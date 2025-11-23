@@ -185,9 +185,7 @@ import pytest
 from unified_theming.core.config import ConfigManager
 from unified_theming.core.manager import UnifiedThemeManager
 from unified_theming.core.types import (
-    ThemeData,
     ThemeInfo,
-    Toolkit,
     ValidationLevel,
     ValidationMessage,
     ValidationResult,
