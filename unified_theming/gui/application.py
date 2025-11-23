@@ -159,7 +159,7 @@ class ThemeApp(Adw.Application):
                 GLib.idle_add(lambda: self.on_themes_discovered(themes))
             except Exception as e:
                 logger.error(f"Failed to initialize theme manager: {e}")
-                GLib.idle_add(lambda: self.on_discovery_error(str(e)))
+                GLib.idle_add(lambda e_copy=e: self.on_discovery_error(str(e_copy)))
 
         thread = Thread(target=discover_async, daemon=True)
         thread.start()
