@@ -1,8 +1,8 @@
 """
 Dialog windows for Unified Theming GUI.
 
-This module contains dialog classes for settings, preferences, and other
-modal interactions.
+This module contains modern dialog classes for settings, preferences,
+and other modal interactions using GTK4 and Libadwaita.
 """
 
 import gi
@@ -12,9 +12,9 @@ gi.require_version("Adw", "1")
 
 import sys
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional
 
-from gi.repository import Adw, GLib, Gtk
+from gi.repository import Adw, Gdk, GLib, Gtk, Pango
 
 # Add the project root to Python path for imports
 project_root = Path(__file__).parent.parent.parent
@@ -243,7 +243,10 @@ class SettingsDialog(Adw.PreferencesWindow):
 
 class ThemeDetailsDialog(Adw.Window):
     """
-    Dialog showing detailed information about a theme.
+    Modern dialog showing detailed information about a theme.
+
+    Features organized sections for metadata, colors, and toolkit support
+    with copy functionality and modern Adwaita styling.
     """
 
     def __init__(self, parent: Gtk.Window, theme_name: str, theme_info: Any):
@@ -259,143 +262,253 @@ class ThemeDetailsDialog(Adw.Window):
 
         self.set_modal(True)
         self.set_transient_for(parent)
-        self.set_title(f"Theme Details - {theme_name}")
-        self.set_default_size(600, 500)
+        self.set_title(f"Theme Details")
+        self.set_default_size(550, 650)
 
-        # Store theme info
         self.theme_name = theme_name
         self.theme_info = theme_info
 
-        # Setup UI
         self.setup_ui()
 
     def setup_ui(self):
-        """
-        Set up the dialog user interface.
-        """
-        # Main box
-        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        main_box.set_margin_start(24)
-        main_box.set_margin_end(24)
-        main_box.set_margin_top(24)
-        main_box.set_margin_bottom(24)
+        """Set up the dialog user interface."""
+        # Toolbar view for proper header
+        toolbar_view = Adw.ToolbarView.new()
 
         # Header
         header = Adw.HeaderBar.new()
-        header.set_title_widget(
-            Adw.WindowTitle.new(f"Theme Details - {self.theme_name}", "")
+        header.set_title_widget(Adw.WindowTitle.new(self.theme_name, "Theme Details"))
+        toolbar_view.add_top_bar(header)
+
+        # Scrolled content
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+
+        # Main content
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=24)
+        content.set_margin_start(24)
+        content.set_margin_end(24)
+        content.set_margin_top(24)
+        content.set_margin_bottom(24)
+
+        # Theme header with icon
+        header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=16)
+        header_box.set_halign(Gtk.Align.CENTER)
+
+        theme_icon = Gtk.Image.new_from_icon_name(
+            "preferences-desktop-appearance-symbolic"
         )
+        theme_icon.set_pixel_size(64)
+        theme_icon.add_css_class("dim-label")
+        header_box.append(theme_icon)
 
-        close_button = Gtk.Button.new_from_icon_name("window-close-symbolic")
-        close_button.connect("clicked", lambda b: self.close())
-        header.pack_end(close_button)
+        header_info = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        header_info.set_valign(Gtk.Align.CENTER)
 
-        main_box.append(header)
+        name_label = Gtk.Label.new(self.theme_name)
+        name_label.add_css_class("title-1")
+        name_label.set_xalign(0)
+        header_info.append(name_label)
 
-        # Content
-        content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        content_box.set_margin_top(12)
+        # Toolkit count subtitle
+        toolkits = getattr(self.theme_info, "supported_toolkits", [])
+        subtitle = (
+            f"{len(toolkits)} toolkit{'s' if len(toolkits) != 1 else ''} supported"
+        )
+        subtitle_label = Gtk.Label.new(subtitle)
+        subtitle_label.add_css_class("dim-label")
+        subtitle_label.set_xalign(0)
+        header_info.append(subtitle_label)
 
-        # Basic info
+        header_box.append(header_info)
+        content.append(header_box)
+
+        # Basic info group
         info_group = Adw.PreferencesGroup.new()
-        info_group.set_title("Basic Information")
+        info_group.set_title("Information")
+        content.append(info_group)
 
-        # Name row
-        name_row = Adw.ActionRow.new()
-        name_row.set_title("Name")
-        name_row.set_subtitle(self.theme_name)
-        info_group.add(name_row)
-
-        # Path row
+        # Path row with copy button
         path_row = Adw.ActionRow.new()
-        path_row.set_title("Path")
+        path_row.set_title("Location")
         path_row.set_subtitle(str(getattr(self.theme_info, "path", "Unknown")))
+        path_row.add_prefix(Gtk.Image.new_from_icon_name("folder-symbolic"))
+
+        copy_btn = Gtk.Button.new_from_icon_name("edit-copy-symbolic")
+        copy_btn.set_valign(Gtk.Align.CENTER)
+        copy_btn.add_css_class("flat")
+        copy_btn.set_tooltip_text("Copy path")
+        copy_btn.connect("clicked", self.on_copy_path)
+        path_row.add_suffix(copy_btn)
         info_group.add(path_row)
 
-        # Toolkits row
-        toolkits = getattr(self.theme_info, "supported_toolkits", [])
-        toolkit_names = [t.value for t in toolkits]
-        toolkits_row = Adw.ActionRow.new()
-        toolkits_row.set_title("Supported Toolkits")
-        toolkits_row.set_subtitle(", ".join(toolkit_names))
-        info_group.add(toolkits_row)
+        # Author row
+        metadata = getattr(self.theme_info, "metadata", {})
+        author = metadata.get("Author", "Unknown")
+        author_row = Adw.ActionRow.new()
+        author_row.set_title("Author")
+        author_row.set_subtitle(author)
+        author_row.add_prefix(Gtk.Image.new_from_icon_name("avatar-default-symbolic"))
+        info_group.add(author_row)
 
-        content_box.append(info_group)
+        # Version row
+        version = metadata.get("Version", "—")
+        version_row = Adw.ActionRow.new()
+        version_row.set_title("Version")
+        version_row.set_subtitle(version)
+        version_row.add_prefix(Gtk.Image.new_from_icon_name("emblem-system-symbolic"))
+        info_group.add(version_row)
 
-        # Colors section
+        # Comment row if available
+        comment = metadata.get("Comment", "")
+        if comment:
+            comment_row = Adw.ActionRow.new()
+            comment_row.set_title("Description")
+            comment_row.set_subtitle(comment)
+            comment_row.add_prefix(
+                Gtk.Image.new_from_icon_name("text-x-generic-symbolic")
+            )
+            info_group.add(comment_row)
+
+        # Toolkits group
+        if toolkits:
+            toolkit_group = Adw.PreferencesGroup.new()
+            toolkit_group.set_title("Supported Toolkits")
+            toolkit_group.set_description("This theme can be applied to these toolkits")
+            content.append(toolkit_group)
+
+            for toolkit in toolkits:
+                toolkit_row = Adw.ActionRow.new()
+                toolkit_row.set_title(toolkit.value.upper())
+                toolkit_row.add_prefix(
+                    Gtk.Image.new_from_icon_name(self.get_toolkit_icon(toolkit.value))
+                )
+
+                check = Gtk.Image.new_from_icon_name("emblem-ok-symbolic")
+                check.add_css_class("success")
+                toolkit_row.add_suffix(check)
+                toolkit_group.add(toolkit_row)
+
+        # Colors group
         colors = getattr(self.theme_info, "colors", {})
         if colors:
             colors_group = Adw.PreferencesGroup.new()
-            colors_group.set_title(f"Colors ({len(colors)})")
+            colors_group.set_title(f"Color Palette ({len(colors)} colors)")
+            colors_group.set_description("Click any color to copy its value")
+            content.append(colors_group)
 
-            # Show first 10 colors
-            for name, hex_color in list(colors.items())[:10]:
-                color_row = Adw.ActionRow.new()
-                color_row.set_title(name)
+            # Expandable color list
+            expander = Adw.ExpanderRow.new()
+            expander.set_title("View All Colors")
+            expander.set_subtitle(f"{len(colors)} color variables")
+            expander.set_expanded(False)
+            colors_group.add(expander)
 
-                # Color indicator
-                color_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            for name, hex_color in list(colors.items())[:20]:
+                color_row = self.create_color_row(name, hex_color)
+                expander.add_row(color_row)
 
-                # Color square
-                color_square = Gtk.DrawingArea()
-                color_square.set_size_request(24, 24)
-                color_square.set_draw_func(self.draw_color_square, hex_color)
-                color_box.append(color_square)
+            if len(colors) > 20:
+                more_label = Gtk.Label.new(f"... and {len(colors) - 20} more colors")
+                more_label.add_css_class("dim-label")
+                more_label.set_margin_top(12)
+                more_label.set_margin_bottom(12)
+                more_box = Gtk.Box()
+                more_box.append(more_label)
+                expander.add_row(more_box)
 
-                # Hex value
-                hex_label = Gtk.Label.new(hex_color.upper())
-                color_box.append(hex_label)
+        scrolled.set_child(content)
+        toolbar_view.set_content(scrolled)
+        self.set_content(toolbar_view)
 
-                color_row.add_suffix(color_box)
-                colors_group.add(color_row)
+    def get_toolkit_icon(self, toolkit: str) -> str:
+        """Get icon name for toolkit."""
+        icons = {
+            "gtk2": "applications-graphics-symbolic",
+            "gtk3": "preferences-desktop-appearance-symbolic",
+            "gtk4": "preferences-desktop-appearance-symbolic",
+            "libadwaita": "preferences-desktop-appearance-symbolic",
+            "qt5": "preferences-desktop-theme-symbolic",
+            "qt6": "preferences-desktop-theme-symbolic",
+            "flatpak": "package-x-generic-symbolic",
+            "snap": "package-x-generic-symbolic",
+        }
+        return icons.get(toolkit, "application-x-executable-symbolic")
 
-            content_box.append(colors_group)
+    def create_color_row(self, name: str, hex_color: str) -> Adw.ActionRow:
+        """Create a row for a color."""
+        row = Adw.ActionRow.new()
+        row.set_title(name)
 
-        # Scrollable content
-        scrolled = Gtk.ScrolledWindow()
-        scrolled.set_child(content_box)
-        main_box.append(scrolled)
+        # Color indicator
+        color_area = Gtk.DrawingArea()
+        color_area.set_size_request(24, 24)
+        color_area.set_draw_func(self.draw_color_square, hex_color)
+        row.add_prefix(color_area)
 
-        self.set_content(main_box)
+        # Hex value label
+        hex_label = Gtk.Label.new(hex_color.upper())
+        hex_label.add_css_class("monospace")
+        hex_label.add_css_class("dim-label")
+        row.add_suffix(hex_label)
+
+        # Copy button
+        copy_btn = Gtk.Button.new_from_icon_name("edit-copy-symbolic")
+        copy_btn.set_valign(Gtk.Align.CENTER)
+        copy_btn.add_css_class("flat")
+        copy_btn.set_tooltip_text(f"Copy {hex_color}")
+        copy_btn.connect("clicked", lambda b: self.copy_to_clipboard(hex_color.upper()))
+        row.add_suffix(copy_btn)
+
+        return row
 
     def draw_color_square(self, area, cr, width, height, hex_color):
-        """
-        Draw a color square.
-
-        Args:
-            area: The drawing area
-            cr: Cairo context
-            width: Width of area
-            height: Height of area
-            hex_color: Hex color value
-        """
-        # Parse hex color
+        """Draw a rounded color square."""
         try:
-            # Remove # if present
             if hex_color.startswith("#"):
                 hex_color = hex_color[1:]
 
-            # Parse RGB
-            r = int(hex_color[0:2], 16) / 255.0
-            g = int(hex_color[2:4], 16) / 255.0
-            b = int(hex_color[4:6], 16) / 255.0
+            if len(hex_color) >= 6:
+                r = int(hex_color[0:2], 16) / 255.0
+                g = int(hex_color[2:4], 16) / 255.0
+                b = int(hex_color[4:6], 16) / 255.0
+            else:
+                r = g = b = 0.5
 
-            # Set color and draw rectangle
+            # Draw rounded rectangle
+            radius = 4
+            degrees = 3.14159 / 180.0
+
+            cr.new_sub_path()
+            cr.arc(width - radius, radius, radius, -90 * degrees, 0 * degrees)
+            cr.arc(width - radius, height - radius, radius, 0 * degrees, 90 * degrees)
+            cr.arc(radius, height - radius, radius, 90 * degrees, 180 * degrees)
+            cr.arc(radius, radius, radius, 180 * degrees, 270 * degrees)
+            cr.close_path()
+
             cr.set_source_rgb(r, g, b)
-            cr.rectangle(0, 0, width, height)
-            cr.fill()
+            cr.fill_preserve()
 
-            # Draw border
-            cr.set_source_rgb(0, 0, 0)
+            cr.set_source_rgba(0, 0, 0, 0.15)
             cr.set_line_width(1)
-            cr.rectangle(0, 0, width, height)
             cr.stroke()
 
         except (ValueError, IndexError):
-            # Fallback to gray if color parsing fails
             cr.set_source_rgb(0.5, 0.5, 0.5)
             cr.rectangle(0, 0, width, height)
             cr.fill()
+
+    def on_copy_path(self, button):
+        """Copy theme path to clipboard."""
+        path = str(getattr(self.theme_info, "path", ""))
+        self.copy_to_clipboard(path)
+        button.set_tooltip_text("Copied!")
+        GLib.timeout_add(1500, lambda: button.set_tooltip_text("Copy path"))
+
+    def copy_to_clipboard(self, text: str):
+        """Copy text to clipboard."""
+        clipboard = Gdk.Display.get_default().get_clipboard()
+        clipboard.set(text)
 
 
 class ConfirmationDialog(Adw.MessageDialog):
