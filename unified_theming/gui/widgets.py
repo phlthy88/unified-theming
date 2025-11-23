@@ -110,11 +110,6 @@ class ThemePreviewWidget(Gtk.Box):
         self.color_flow.set_column_spacing(12)
         self.color_flow.set_margin_top(12)
 
-        # Wrap in a frame
-        color_frame = Gtk.Frame()
-        color_frame.set_child(self.color_flow)
-        color_frame.add_css_class("view")
-
         # Add expand row for colors
         self.color_expander = Adw.ExpanderRow.new()
         self.color_expander.set_title("View Color Swatches")
