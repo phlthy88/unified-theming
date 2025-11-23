@@ -26,6 +26,7 @@ class Toolkit(Enum):
     QT6 = "qt6"
     FLATPAK = "flatpak"
     SNAP = "snap"
+    GNOME_SHELL = "gnome-shell"
 
 
 class ValidationLevel(Enum):
@@ -532,4 +533,45 @@ QT_COLOR_VARIABLES = [
     "VisitedLink",
     "ToolTipBase",
     "ToolTipText",
+]
+
+GNOME_SHELL_COLOR_VARIABLES = [
+    # Panel colors
+    "panel_bg_color",
+    "panel_fg_color",
+    "panel_border_color",
+    # Overview colors
+    "overview_bg_color",
+    "overview_fg_color",
+    # Dash colors
+    "dash_bg_color",
+    "dash_fg_color",
+    "dash_border_color",
+    # OSD colors
+    "osd_bg_color",
+    "osd_fg_color",
+    "osd_border_color",
+    # Dialog colors
+    "dialog_bg_color",
+    "dialog_fg_color",
+    "dialog_border_color",
+    # Popup menu colors
+    "popup_bg_color",
+    "popup_fg_color",
+    "popup_border_color",
+    "popup_hover_bg_color",
+    "popup_hover_fg_color",
+    # Button colors
+    "button_bg_color",
+    "button_fg_color",
+    "button_border_color",
+    "button_hover_bg_color",
+    # Focus and selection
+    "focus_color",
+    "selected_bg_color",
+    "selected_fg_color",
+    # Semantic colors
+    "success_color",
+    "warning_color",
+    "error_color",
 ]

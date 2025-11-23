@@ -234,6 +234,10 @@ class UnifiedThemeParser:
         if (theme_path / "gtk-4.0" / "gtk.css").exists():
             supported.append(Toolkit.LIBADWAITA)
 
+        # Check for GNOME Shell support
+        if (theme_path / "gnome-shell").exists():
+            supported.append(Toolkit.GNOME_SHELL)
+
         # Additional checks could go here for other toolkits
         # (Qt, Flatpak, Snap) based on their specific requirements
 
@@ -291,7 +295,7 @@ class UnifiedThemeParser:
 
         Args:
             theme_path: Path to theme directory
-            toolkit: Toolkit to extract colors for ("gtk", "gtk3", "gtk4")
+            toolkit: Toolkit to extract colors for ("gtk", "gtk3", "gtk4", "gnome-shell")
 
         Returns:
             Dictionary mapping color variable names to color values
@@ -310,11 +314,14 @@ class UnifiedThemeParser:
             css_paths = [theme_path / "gtk-3.0" / "gtk.css"]
         elif toolkit == "gtk4":
             css_paths = [theme_path / "gtk-4.0" / "gtk.css"]
+        elif toolkit == "gnome-shell":
+            css_paths = [theme_path / "gnome-shell" / "gnome-shell.css"]
         else:
-            # Default to both if toolkit not specified
+            # Default to all if toolkit not specified
             css_paths = [
                 theme_path / "gtk-3.0" / "gtk.css",
                 theme_path / "gtk-4.0" / "gtk.css",
+                theme_path / "gnome-shell" / "gnome-shell.css",
             ]
 
         for css_path in css_paths:

@@ -48,6 +48,63 @@ def valid_theme(tmp_path):
 
 
 @pytest.fixture
+def gnome_shell_theme(tmp_path):
+    """Create a complete theme with GNOME Shell support."""
+    theme = tmp_path / "ShellTheme"
+    theme.mkdir()
+
+    # GTK4 support
+    gtk4 = theme / "gtk-4.0"
+    gtk4.mkdir()
+    (gtk4 / "gtk.css").write_text(
+        """
+@define-color theme_bg_color #303030;
+@define-color theme_fg_color #ffffff;
+@define-color theme_selected_bg_color #3584e4;
+@define-color theme_selected_fg_color #ffffff;
+    """
+    )
+
+    # GTK3 support
+    gtk3 = theme / "gtk-3.0"
+    gtk3.mkdir()
+    (gtk3 / "gtk.css").write_text(
+        """
+@define-color theme_bg_color #303030;
+@define-color theme_fg_color #ffffff;
+    """
+    )
+
+    # GNOME Shell support
+    gnome_shell = theme / "gnome-shell"
+    gnome_shell.mkdir()
+    (gnome_shell / "gnome-shell.css").write_text(
+        """
+/* GNOME Shell Theme */
+@define-color panel_bg_color #303030;
+@define-color panel_fg_color #ffffff;
+@define-color osd_bg_color #242424;
+@define-color osd_fg_color #eeeeee;
+@define-color popup_bg_color #303030;
+@define-color popup_fg_color #ffffff;
+
+#panel {
+    background-color: @panel_bg_color;
+    color: @panel_fg_color;
+    border-bottom: 1px solid #1c1c1c;
+}
+
+.popup-menu-content {
+    background-color: @popup_bg_color;
+    color: @popup_fg_color;
+}
+    """
+    )
+
+    return theme
+
+
+@pytest.fixture
 def incomplete_theme(tmp_path):
     """Create a theme with only GTK3 support."""
     theme = tmp_path / "IncompleteTheme"
