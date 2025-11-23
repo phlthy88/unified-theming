@@ -83,7 +83,9 @@ class TestGnomeShellHandlerInit:
     def test_handler_config_paths(self, gnome_shell_handler):
         """Test that config paths are set correctly."""
         assert gnome_shell_handler.config_dir == Path.home() / ".config"
-        assert gnome_shell_handler.shell_config_dir == Path.home() / ".config/gnome-shell"
+        assert (
+            gnome_shell_handler.shell_config_dir == Path.home() / ".config/gnome-shell"
+        )
 
 
 class TestGnomeShellHandlerAvailability:
@@ -397,9 +399,7 @@ class TestGnomeShellPlanning:
             changes = gnome_shell_handler.plan_theme(sample_gnome_shell_theme_data)
 
             # Should plan a gsettings change
-            gsettings_changes = [
-                c for c in changes if "user-theme" in str(c.file_path)
-            ]
+            gsettings_changes = [c for c in changes if "user-theme" in str(c.file_path)]
             assert len(gsettings_changes) >= 1
 
     def test_plan_theme_with_css_generation(
