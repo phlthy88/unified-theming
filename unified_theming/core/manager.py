@@ -10,6 +10,7 @@ from typing import Dict, List, Optional
 
 from ..handlers.base import BaseHandler
 from ..handlers.flatpak_handler import FlatpakHandler
+from ..handlers.gnome_shell_handler import GnomeShellHandler
 from ..handlers.gtk_handler import GTKHandler
 from ..handlers.qt_handler import QtHandler
 from ..handlers.snap_handler import SnapHandler
@@ -56,6 +57,7 @@ class UnifiedThemeManager:
         self.handlers: Dict[str, BaseHandler] = {
             "gtk": GTKHandler(),
             "qt": QtHandler(),
+            "gnome_shell": GnomeShellHandler(),
             "flatpak": FlatpakHandler(),
             "snap": SnapHandler(),
         }
