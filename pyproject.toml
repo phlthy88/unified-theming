@@ -39,6 +39,10 @@ dev = [
     "isort>=5.10.0",
     "pre-commit>=2.17.0",
 ]
+# GUI dependencies - IMPORTANT: PyGObject requires system libraries to be installed first.
+# See README.md for system dependency installation instructions for your distribution.
+# On Debian/Ubuntu: sudo apt install libgirepository1.0-dev python3-gi python3-dev pkg-config
+# On Fedora: sudo dnf install gobject-introspection-devel python3-gobject python3-devel
 gui = [
     "PyGObject>=3.42.0"
 ]

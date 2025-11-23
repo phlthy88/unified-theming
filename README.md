@@ -34,6 +34,59 @@ Unified Theming is a comprehensive Linux desktop application that applies consis
 
 ## Installation
 
+### System Dependencies (Required First)
+
+**Important:** You must install system dependencies BEFORE running `pip install` with the GUI option, as PyGObject requires native libraries to build.
+
+**Ubuntu/Debian (22.04+):**
+```bash
+sudo apt install -y \
+  libgtk-4-dev \
+  libadwaita-1-dev \
+  libgirepository1.0-dev \
+  gir1.2-gtk-4.0 \
+  python3-gi \
+  python3-gi-cairo \
+  pkg-config \
+  python3-dev
+```
+
+**Debian 13+ / Ubuntu 24.04+ (with GObject Introspection 2.0):**
+```bash
+sudo apt install -y \
+  libgtk-4-dev \
+  libadwaita-1-dev \
+  libgirepository-1.0-dev \
+  gir1.2-gtk-4.0 \
+  python3-gi \
+  python3-gi-cairo \
+  pkg-config \
+  python3-dev
+```
+
+**Fedora/RHEL:**
+```bash
+sudo dnf install -y \
+  gtk4-devel \
+  libadwaita-devel \
+  gobject-introspection-devel \
+  python3-gobject \
+  python3-cairo \
+  pkg-config \
+  python3-devel
+```
+
+**Arch Linux:**
+```bash
+sudo pacman -S \
+  gtk4 \
+  libadwaita \
+  gobject-introspection \
+  python-gobject \
+  python-cairo \
+  pkgconf
+```
+
 ### From Source
 
 ```bash
@@ -45,41 +98,14 @@ cd unified-theming
 python3 -m venv venv
 source venv/bin/activate
 
-# Install in development mode with all dependencies
+# Install CLI only (no GUI dependencies)
+pip install -e ".[dev]"
+
+# OR install with GUI support (requires system dependencies above)
 pip install -e ".[dev,gui]"
 ```
 
-### System Dependencies
-
-**Ubuntu/Debian:**
-```bash
-sudo apt install -y \
-  libgtk-4-dev \
-  libadwaita-1-dev \
-  libgirepository1.0-dev \
-  python3-gi \
-  python3-gi-cairo
-```
-
-**Fedora/RHEL:**
-```bash
-sudo dnf install -y \
-  gtk4-devel \
-  libadwaita-devel \
-  gobject-introspection-devel \
-  python3-gobject \
-  python3-cairo
-```
-
-**Arch Linux:**
-```bash
-sudo pacman -S \
-  gtk4 \
-  libadwaita \
-  gobject-introspection \
-  python-gobject \
-  python-cairo
-```
+**Note:** If you only need the CLI interface, you can skip the system dependencies and use `pip install -e ".[dev]"` instead.
 
 ## Usage
 
