@@ -628,9 +628,7 @@ class MainWindow(Adw.ApplicationWindow):
 
     def setup_content(self):
         """Set up the content area with theme preview."""
-        content_page = Adw.NavigationPage.new(Gtk.Box(), "Preview")
         content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        content_page.set_child(content_box)
 
         # Content header
         content_header = Adw.HeaderBar.new()
