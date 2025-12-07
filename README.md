@@ -5,8 +5,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/phlthy88/unified-theming"><img src="https://img.shields.io/badge/tests-386%20passing-brightgreen" alt="Tests"></a>
-  <a href="https://github.com/phlthy88/unified-theming"><img src="https://img.shields.io/badge/coverage-53%25-yellow" alt="Coverage"></a>
+  <a href="https://github.com/phlthy88/unified-theming"><img src="https://img.shields.io/badge/tests-407%20passing-brightgreen" alt="Tests"></a>
+  <a href="https://github.com/phlthy88/unified-theming"><img src="https://img.shields.io/badge/coverage-52%25-yellow" alt="Coverage"></a>
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="Python"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
   <a href="https://github.com/phlthy88/unified-theming/releases"><img src="https://img.shields.io/badge/release-v0.5.0-green" alt="Release"></a>
@@ -101,6 +101,18 @@ unified-theming apply_theme Dracula --dry-run
 # 🎯 Target specific toolkits
 unified-theming apply_theme Catppuccin --targets gtk4 --targets flatpak
 
+# 🧩 Apply directly from JSON tokens
+unified-theming apply_theme --from-tokens tokens.json
+
+# 🪄 Create starter tokens from an accent color
+unified-theming create MyTheme --accent "#3584e4" --variant dark --output mytheme.json
+
+# 🔄 Convert an installed theme directory to tokens
+unified-theming convert Adwaita-dark --output tokens.json
+
+# 🏗️ Render tokens to a specific toolkit config
+unified-theming render tokens.json --target gtk --output ./out
+
 # 📊 Show current theme status
 unified-theming current
 
@@ -163,6 +175,18 @@ handler = GTKHandler()
 handler.apply_from_tokens(tokens)
 ```
 
+CLI equivalents:
+```bash
+# Create starter tokens
+unified-theming create MyTheme --accent "#2ec27e" --variant light --output tokens.json
+
+# Convert an existing theme into tokens
+unified-theming convert Adwaita-dark --output tokens.json
+
+# Render those tokens to toolkit configs
+unified-theming render tokens.json --target gnome-shell --output ~/.config/gnome-shell
+```
+
 ## 📊 Project Status
 
 | Component | Status |
@@ -177,7 +201,7 @@ handler.apply_from_tokens(tokens)
 | 💻 CLI | ✅ Complete |
 | 🖥️ GUI | 🚧 Beta |
 
-**Test Suite:** 386 tests passing ✅
+**Test Suite:** 407 tests passing ✅
 
 ## 🗺️ Roadmap
 
