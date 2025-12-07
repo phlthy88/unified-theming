@@ -455,17 +455,18 @@ name={theme_data.name}
                 component="qt_handler",
             )
 
-        # Check if required color variables are present
-        required_colors = ["theme_bg_color", "theme_fg_color"]
-        missing_colors = [
-            color for color in required_colors if color not in theme_data.colors
-        ]
+        # Check if required color variables are present (only if colors dict is populated)
+        if theme_data.colors:
+            required_colors = ["theme_bg_color", "theme_fg_color"]
+            missing_colors = [
+                color for color in required_colors if color not in theme_data.colors
+            ]
 
-        if missing_colors:
-            result.add_warning(
-                f"Theme '{theme_data.name}' missing required colors for Qt: {', '.join(missing_colors)}",
-                component="qt_handler",
-            )
+            if missing_colors:
+                result.add_warning(
+                    f"Theme '{theme_data.name}' missing required colors for Qt: {', '.join(missing_colors)}",
+                    component="qt_handler",
+                )
 
         return result
 
@@ -476,22 +477,8 @@ name={theme_data.name}
         Returns:
             True if Qt is available, False otherwise
         """
-        import subprocess
-
-        try:
-            # Check if qmake or qmake6 is available (indicating Qt installation)
-            for cmd in ["qmake", "qmake6", "qmake-qt5"]:
-                try:
-                    result = subprocess.run(
-                        [cmd, "-v"], capture_output=True, check=False
-                    )
-                    if result.returncode == 0:
-                        return True
-                except FileNotFoundError:
-                    continue
-            return False
-        except Exception:
-            return False
+        # Qt config directory should exist if Qt apps have been run
+        return self.config_dir.exists()
 
     def get_supported_features(self) -> List[str]:
         """
