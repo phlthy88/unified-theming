@@ -707,3 +707,16 @@ def gtk_color_to_qt_format(gtk_color: str) -> str:
     raise ColorValidationError(
         "unknown", gtk_color, f"Unsupported color format: {gtk_color}"
     )
+
+
+def srgb_to_linear(c: float) -> float:
+    """
+    Convert sRGB color component to linear RGB.
+
+    Args:
+        c: sRGB component value (0-1)
+
+    Returns:
+        Linear RGB component value
+    """
+    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
