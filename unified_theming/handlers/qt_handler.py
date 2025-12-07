@@ -72,11 +72,16 @@ class QtHandler(BaseHandler):
         logger.info(f"Applying theme '{tokens.name}' from tokens to Qt toolkit")
 
         try:
+            # 1. Render content (Prepare)
             rendered = self.renderer.render(tokens)
 
-            # Write kdeglobals file
+            files_to_write = {}
             for rel_path, content in rendered.files.items():
                 target = self.config_dir / rel_path
+                files_to_write[target] = content
+
+            # 2. Write all targets
+            for target, content in files_to_write.items():
                 target.parent.mkdir(parents=True, exist_ok=True)
                 if not write_file_with_backup(target, content):
                     logger.error(f"Failed to write {target}")
