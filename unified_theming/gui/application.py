@@ -630,9 +630,11 @@ class MainWindow(Adw.ApplicationWindow):
         """Set up the content area with theme preview."""
         content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 
-        # Content header
+        # Content header (no window buttons - main header has them)
         content_header = Adw.HeaderBar.new()
         content_header.add_css_class("flat")
+        content_header.set_show_start_title_buttons(False)
+        content_header.set_show_end_title_buttons(False)
 
         # Details button
         details_button = Gtk.Button.new_from_icon_name("info-symbolic")
