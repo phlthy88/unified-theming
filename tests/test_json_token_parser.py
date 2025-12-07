@@ -22,14 +22,10 @@ class TestJSONTokenParser:
             "surface": {
                 "primary": {"$value": "#ffffff", "$type": "color"},
                 "secondary": {"$value": "#f6f6f6", "$type": "color"},
-                "tertiary": {"$value": "#eeeeee", "$type": "color"}
+                "tertiary": {"$value": "#eeeeee", "$type": "color"},
             },
-            "content": {
-                "primary": {"$value": "#1a1a1a", "$type": "color"}
-            },
-            "accent": {
-                "primary": {"$value": "#3584e4", "$type": "color"}
-            }
+            "content": {"primary": {"$value": "#1a1a1a", "$type": "color"}},
+            "accent": {"primary": {"$value": "#3584e4", "$type": "color"}},
         }
         file_path = tmp_path / "valid_tokens.json"
         file_path.write_text(json.dumps(content))
@@ -41,14 +37,12 @@ class TestJSONTokenParser:
         content = {
             "color": {
                 "primary": {"$value": "#3584e4", "$type": "color"},
-                "surface": {
-                    "light": {"$value": "#ffffff", "$type": "color"}
-                }
+                "surface": {"light": {"$value": "#ffffff", "$type": "color"}},
             },
             "button": {
                 "background": {"$value": "{color.primary}", "$type": "color"},
-                "text": {"$value": "{color.surface.light}", "$type": "color"}
-            }
+                "text": {"$value": "{color.surface.light}", "$type": "color"},
+            },
         }
         file_path = tmp_path / "referenced_tokens.json"
         file_path.write_text(json.dumps(content))
@@ -109,7 +103,9 @@ class TestJSONTokenParser:
         # and that some color from the referenced data makes its way to the schema if mapped.
         # Since button.background is "{color.primary}", and color.primary is "#3584e4",
         # if the mapping correctly picks up color.primary into accents.primary, it should be #3584e4
-        assert tokens.accents.primary.to_hex() == "#3584e4" # This relies on the _map_to_universal_schema picking it up
+        assert (
+            tokens.accents.primary.to_hex() == "#3584e4"
+        )  # This relies on the _map_to_universal_schema picking it up
 
     def test_parse_invalid_json_raises(self, parser, invalid_json_file):
         """Test that parsing an invalid JSON file raises ThemeParseError."""
@@ -126,9 +122,7 @@ class TestJSONTokenParser:
     def test_parse_missing_required_tokens(self, parser, tmp_path):
         """Test that parsing a JSON file missing some expected tokens still works."""
         content = {
-            "surface": {
-                "primary": {"$value": "#ffffff", "$type": "color"}
-            }
+            "surface": {"primary": {"$value": "#ffffff", "$type": "color"}}
             # Missing content and accent
         }
         file_path = tmp_path / "missing_tokens.json"
@@ -136,5 +130,5 @@ class TestJSONTokenParser:
 
         tokens: UniversalTokenSchema = parser.parse(file_path)
         assert tokens.surfaces.primary.to_hex() == "#ffffff"
-        assert tokens.content.primary is not None # It will be default_inverse_color
-        assert tokens.accents.primary is not None # It will be default accent color
+        assert tokens.content.primary is not None  # It will be default_inverse_color
+        assert tokens.accents.primary is not None  # It will be default accent color

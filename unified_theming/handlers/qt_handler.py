@@ -15,6 +15,8 @@ from ..core.types import (
     ValidationLevel,
     ValidationResult,
 )
+from ..renderers.qt import QtRenderer
+from ..tokens.schema import UniversalTokenSchema
 from ..utils.file import write_file_with_backup
 from ..utils.logging_config import get_logger
 from .base import BaseHandler
@@ -38,6 +40,7 @@ class QtHandler(BaseHandler):
         self.config_dir = Path.home() / ".config"
         self.kdeglobals_path = self.config_dir / "kdeglobals"
         self.kvantum_dir = self.config_dir / "Kvantum"
+        self.renderer = QtRenderer()
 
         # Mapping from GTK to Qt color variables
         self.gtk_to_qt_mapping = {
@@ -55,6 +58,40 @@ class QtHandler(BaseHandler):
             "warning_color": "ForegroundNeutral",
             "error_color": "ForegroundNegative",
         }
+
+    def apply_from_tokens(self, tokens: UniversalTokenSchema) -> bool:
+        """
+        Apply theme from universal tokens using QtRenderer.
+
+        Args:
+            tokens: Universal token schema to apply
+
+        Returns:
+            True if successful, False otherwise
+        """
+        logger.info(f"Applying theme '{tokens.name}' from tokens to Qt toolkit")
+
+        try:
+            rendered = self.renderer.render(tokens)
+
+            # Write kdeglobals file
+            for rel_path, content in rendered.files.items():
+                target = self.config_dir / rel_path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                if not write_file_with_backup(target, content):
+                    logger.error(f"Failed to write {target}")
+                    return False
+                logger.debug(f"Wrote configuration to: {target}")
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Error applying Qt theme from tokens: {e}")
+            raise ThemeApplicationError(
+                f"Failed to apply theme '{tokens.name}' from tokens: {str(e)}",
+                toolkit="qt",
+                recoverable=True,
+            )
 
     def apply_theme(self, theme_data: ThemeData) -> bool:
         """

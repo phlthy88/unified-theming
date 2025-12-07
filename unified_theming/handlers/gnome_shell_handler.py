@@ -5,7 +5,6 @@ This module implements the handler for GNOME Shell theming, managing
 shell themes through gsettings and the User Theme extension.
 """
 
-import json
 import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -18,6 +17,8 @@ from ..core.types import (
     Toolkit,
     ValidationResult,
 )
+from ..renderers.gnome_shell import GnomeShellRenderer
+from ..tokens.schema import UniversalTokenSchema
 from ..utils.file import read_file_with_fallback, write_file_with_backup
 from ..utils.logging_config import get_logger
 from .base import BaseHandler
@@ -68,6 +69,40 @@ class GnomeShellHandler(BaseHandler):
         self.config_dir = Path.home() / ".config"
         self.shell_config_dir = self.config_dir / "gnome-shell"
         self._user_theme_available: Optional[bool] = None
+        self.renderer = GnomeShellRenderer()
+
+    def apply_from_tokens(self, tokens: UniversalTokenSchema) -> bool:
+        """
+        Apply theme from universal tokens using GnomeShellRenderer.
+
+        Args:
+            tokens: Universal token schema to apply
+
+        Returns:
+            True if successful, False otherwise
+        """
+        logger.info(f"Applying theme '{tokens.name}' from tokens to GNOME Shell")
+
+        try:
+            rendered = self.renderer.render(tokens)
+
+            for rel_path, content in rendered.files.items():
+                target = self.config_dir / rel_path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                if not write_file_with_backup(target, content):
+                    logger.error(f"Failed to write {target}")
+                    return False
+                logger.debug(f"Wrote configuration to: {target}")
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Error applying GNOME Shell theme from tokens: {e}")
+            raise ThemeApplicationError(
+                f"Failed to apply theme '{tokens.name}' from tokens: {str(e)}",
+                toolkit="gnome-shell",
+                recoverable=True,
+            )
 
     def apply_theme(self, theme_data: ThemeData) -> bool:
         """
@@ -95,7 +130,9 @@ class GnomeShellHandler(BaseHandler):
 
             # Apply shell theme via GSettings
             if not self._apply_shell_theme_gsettings(theme_data.name):
-                logger.warning(f"Could not apply shell theme: {theme_data.name} (extension may not be installed)")
+                logger.warning(
+                    f"Could not apply shell theme: {theme_data.name} (extension may not be installed)"
+                )
                 success = False
 
             # Generate and apply custom shell CSS if colors are provided
