@@ -1,6 +1,11 @@
 """Universal design token schema and utilities."""
 
-from .defaults import ADWAITA_DARK, ADWAITA_LIGHT, create_dark_tokens, create_light_tokens
+from .defaults import (
+    ADWAITA_DARK,
+    ADWAITA_LIGHT,
+    create_dark_tokens,
+    create_light_tokens,
+)
 from .schema import (
     AccentTokens,
     BorderTokens,

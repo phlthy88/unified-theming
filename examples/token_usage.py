@@ -32,8 +32,7 @@ def main():
     # 1. Create custom tokens
     print("1. Creating custom light tokens with blue accent:")
     custom_light = create_light_tokens(
-        accent=Color.from_hex("#007acc"),
-        name="Custom Blue"
+        accent=Color.from_hex("#007acc"), name="Custom Blue"
     )
     print(f"   Theme: {custom_light.name}")
     print(f"   Variant: {custom_light.variant}")
