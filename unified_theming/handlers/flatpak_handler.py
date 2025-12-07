@@ -72,8 +72,12 @@ class FlatpakHandler(BaseHandler):
                 Path("/usr/share/themes"),
             ]
 
+            success_count = 0
+            existing_dirs = 0
+
             for theme_dir in theme_dirs:
                 if theme_dir.exists():
+                    existing_dirs += 1
                     try:
                         subprocess.run(
                             [
@@ -86,32 +90,18 @@ class FlatpakHandler(BaseHandler):
                             capture_output=True,
                         )
                         logger.debug(f"Granted access to theme directory: {theme_dir}")
+                        success_count += 1
                     except subprocess.CalledProcessError:
                         logger.warning(
                             f"Failed to grant access to theme directory: {theme_dir}"
                         )
 
-            # Set environment variables for theme selection
-            subprocess.run(
-                ["flatpak", "override", "--user", f"--env=GTK_THEME={theme_data.name}"],
-                check=True,
-                capture_output=True,
-            )
+            # Return False if all existing directories failed
+            if existing_dirs > 0 and success_count == 0:
+                logger.error("All Flatpak override commands failed")
+                return False
 
-            # Additional environment variables that might be relevant
-            subprocess.run(
-                [
-                    "flatpak",
-                    "override",
-                    "--user",
-                    f"--env=QT_QPA_PLATFORMTHEME=gtk2",  # Use GTK theme for Qt apps
-                    f"--env=XDG_CURRENT_DESKTOP=GNOME",  # Ensure theming is enabled
-                ],
-                check=True,
-                capture_output=True,
-            )
-
-            logger.debug(f"Flatpak theme application completed for: {theme_data.name}")
+            logger.debug(f"Flatpak theme access configured for: {theme_data.name}")
             return True
 
         except subprocess.CalledProcessError as e:

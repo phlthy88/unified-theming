@@ -17,6 +17,8 @@ from ..core.types import (
     ValidationResult,
 )
 from ..core.validation_utils import validate_wcag_contrast
+from ..renderers.gtk import GTKRenderer
+from ..tokens.schema import UniversalTokenSchema
 from ..utils.file import write_file_with_backup
 from ..utils.logging_config import get_logger
 from .base import BaseHandler
@@ -41,6 +43,7 @@ class GTKHandler(BaseHandler):
         self.gtk4_config_dir = self.config_dir / "gtk-4.0"
         self.gtk3_config_dir = self.config_dir / "gtk-3.0"
         self.gtk2_config_path = Path.home() / ".gtkrc-2.0"
+        self.renderer = GTKRenderer()
 
         # Mapping from GTK to libadwaita color variables
         self.gtk_to_libadwaita_mapping = {
@@ -96,6 +99,45 @@ class GTKHandler(BaseHandler):
             logger.error(f"Error applying GTK theme: {e}")
             raise ThemeApplicationError(
                 f"Failed to apply theme '{theme_data.name}' to GTK: {str(e)}",
+                toolkit="gtk",
+                recoverable=True,
+            )
+
+    def apply_from_tokens(self, tokens: UniversalTokenSchema) -> bool:
+        """
+        Apply theme from universal tokens using GTKRenderer.
+
+        Args:
+            tokens: Universal token schema to apply
+
+        Returns:
+            True if successful, False otherwise
+        """
+        logger.info(f"Applying theme '{tokens.name}' from tokens to GTK toolkit")
+
+        try:
+            # Render tokens to GTK CSS
+            rendered = self.renderer.render(tokens)
+
+            # Write CSS files
+            for rel_path, content in rendered.files.items():
+                target = self.config_dir / rel_path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                if not write_file_with_backup(target, content):
+                    logger.error(f"Failed to write {target}")
+                    return False
+                logger.debug(f"Wrote CSS to: {target}")
+
+            # Apply GSettings if available
+            if self.is_available() and "gtk-theme-name" in rendered.settings:
+                self._apply_gtk3_theme(rendered.settings["gtk-theme-name"])
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Error applying GTK theme from tokens: {e}")
+            raise ThemeApplicationError(
+                f"Failed to apply theme '{tokens.name}' from tokens: {str(e)}",
                 toolkit="gtk",
                 recoverable=True,
             )

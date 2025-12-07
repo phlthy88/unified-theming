@@ -497,6 +497,50 @@ def testcmd(ctx, theme_name: str, targets: Tuple[str, ...], dry_run: bool):
     click.echo(f"Dry-run: {dry_run}")
 
 
+@cli.command("check-deps")
+def check_deps():
+    """Check cross-toolkit theming dependencies.
+
+    Detects Qt apps on GTK desktops (or vice versa) and shows
+    which packages are needed for consistent theming.
+    """
+    from unified_theming.utils.system_detect import (
+        detect_environment,
+        get_install_command,
+    )
+
+    env = detect_environment()
+
+    click.echo(f"Desktop: {env.desktop.upper()}")
+    click.echo(f"GTK apps detected: {'Yes' if env.has_gtk_apps else 'No'}")
+    click.echo(f"Qt apps detected: {'Yes' if env.has_qt_apps else 'No'}")
+    click.echo()
+
+    if env.qt_packages_installed:
+        click.secho("✓ Qt theming packages installed:", fg="green")
+        for pkg in env.qt_packages_installed:
+            click.echo(f"  • {pkg}")
+
+    if env.qt_packages_missing:
+        click.secho("✗ Qt theming packages missing:", fg="yellow")
+        for pkg in env.qt_packages_missing:
+            click.echo(f"  • {pkg}")
+        click.echo()
+        click.secho("Install with:", fg="cyan")
+        click.echo(f"  {get_install_command(env.qt_packages_missing)}")
+
+    if env.gtk_packages_missing:
+        click.secho("✗ GTK theming packages missing:", fg="yellow")
+        for pkg in env.gtk_packages_missing:
+            click.echo(f"  • {pkg}")
+        click.echo()
+        click.secho("Install with:", fg="cyan")
+        click.echo(f"  {get_install_command(env.gtk_packages_missing)}")
+
+    if not env.qt_packages_missing and not env.gtk_packages_missing:
+        click.secho("✓ All cross-toolkit theming packages installed!", fg="green")
+
+
 # ============================================================================
 # Entry Point
 # ============================================================================

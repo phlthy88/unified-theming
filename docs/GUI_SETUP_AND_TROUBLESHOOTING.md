@@ -132,6 +132,34 @@ python /path/to/unified-theming/unified_theming/gui/application.py
 
 ## Troubleshooting Common Issues
 
+### Issue 0: Snap fails on Ubuntu 25.10+ (snapd 2.72+)
+
+**Error:** `snap "unified-theming" has "configure" hook change "core.experimental.desktop-support"`
+
+**Cause:** Ubuntu 25.10 ships snapd 2.72 which removed the `core.experimental.desktop-support` option. The unified-theming snap's configure hook still references this deprecated option, causing installation/run failure.
+
+**Solution:** Use the pip/source installation instead:
+
+```bash
+# 1. Uninstall the snap (if installed)
+sudo snap remove unified-theming
+
+# 2. Install system GTK dependencies
+sudo apt update && sudo apt install -y \
+    libgtk-4-dev libadwaita-1-dev libgirepository1.0-dev \
+    gir1.2-gtk-4.0 python3-gi python3-gi-cairo pkg-config python3-dev
+
+# 3. Install from source with GUI support
+cd ~/unified-theming
+source venv/bin/activate
+pip install -e ".[dev,gui]"
+
+# 4. Launch GUI directly
+python -m unified_theming.gui.application
+```
+
+**Alternative:** Run on Ubuntu 22.04/24.04 with older snapd, or wait for snap package update.
+
 ### Issue 1: "No module named 'gi'"
 **Cause:** PyGObject not installed  
 **Solution:** Install system GTK libraries first, then `pip install PyGObject`

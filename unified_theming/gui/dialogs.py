@@ -12,9 +12,12 @@ gi.require_version("Adw", "1")
 
 import sys
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from gi.repository import Adw, Gdk, GLib, Gtk, Pango
+
+if TYPE_CHECKING:
+    from unified_theming.utils.system_detect import ToolkitEnvironment
 
 # Add the project root to Python path for imports
 project_root = Path(__file__).parent.parent.parent
@@ -567,3 +570,161 @@ class ConfirmationDialog(Adw.MessageDialog):
 
         self.connect("response", on_response)
         self.present()
+
+
+class ToolkitCompatibilityDialog(Adw.MessageDialog):
+    """
+    Dialog showing cross-toolkit compatibility status and missing packages.
+
+    Displays when Qt apps are detected on GTK desktops (or vice versa)
+    and offers to install required theming packages.
+    """
+
+    def __init__(
+        self,
+        parent: Gtk.Window,
+        environment: "ToolkitEnvironment",
+        on_install: Optional[Callable[[], None]] = None,
+    ):
+        """
+        Initialize the compatibility dialog.
+
+        Args:
+            parent: Parent window
+            environment: Detected toolkit environment
+            on_install: Callback when user clicks install
+        """
+        super().__init__()
+
+        self.environment = environment
+        self.on_install = on_install
+
+        self.set_modal(True)
+        self.set_transient_for(parent)
+
+        self._setup_content()
+
+    def _setup_content(self):
+        """Set up dialog content based on environment."""
+        env = self.environment
+
+        if env.desktop in ("gnome", "xfce", "cinnamon") and env.has_qt_apps:
+            self._setup_qt_on_gtk()
+        elif env.desktop == "kde" and env.has_gtk_apps:
+            self._setup_gtk_on_kde()
+        else:
+            self._setup_all_good()
+
+    def _setup_qt_on_gtk(self):
+        """Configure dialog for Qt apps on GTK desktop."""
+        self.set_heading("Qt Applications Detected")
+
+        missing = self.environment.qt_packages_missing
+        installed = self.environment.qt_packages_installed
+
+        if missing:
+            self.set_body(
+                f"You have Qt applications installed, but some theming packages "
+                f"are missing. Without these, Qt apps may look inconsistent.\n\n"
+                f"✓ Installed: {', '.join(installed) if installed else 'None'}\n"
+                f"✗ Missing: {', '.join(missing)}"
+            )
+            self.add_response("cancel", "Later")
+            self.add_response("install", "Install Packages")
+            self.set_response_appearance("install", Adw.ResponseAppearance.SUGGESTED)
+            self.set_default_response("install")
+        else:
+            self.set_body(
+                f"Qt theming packages are properly installed.\n\n"
+                f"✓ Installed: {', '.join(installed)}\n\n"
+                f"Your Qt applications should follow your GTK theme."
+            )
+            self.add_response("ok", "OK")
+            self.set_default_response("ok")
+
+        self.set_close_response("cancel" if missing else "ok")
+
+    def _setup_gtk_on_kde(self):
+        """Configure dialog for GTK apps on KDE desktop."""
+        self.set_heading("GTK Applications Detected")
+
+        missing = self.environment.gtk_packages_missing
+
+        if missing:
+            self.set_body(
+                f"You have GTK applications installed, but some theming packages "
+                f"are missing. Without these, GTK apps may look inconsistent.\n\n"
+                f"✗ Missing: {', '.join(missing)}"
+            )
+            self.add_response("cancel", "Later")
+            self.add_response("install", "Install Packages")
+            self.set_response_appearance("install", Adw.ResponseAppearance.SUGGESTED)
+            self.set_default_response("install")
+        else:
+            self.set_body("GTK theming packages are properly installed.")
+            self.add_response("ok", "OK")
+            self.set_default_response("ok")
+
+        self.set_close_response("cancel" if missing else "ok")
+
+    def _setup_all_good(self):
+        """Configure dialog when no issues detected."""
+        self.set_heading("Toolkit Compatibility")
+        self.set_body(
+            "Your system appears to have the necessary packages for "
+            "consistent theming across all detected applications."
+        )
+        self.add_response("ok", "OK")
+        self.set_default_response("ok")
+        self.set_close_response("ok")
+
+    def run_async(self, callback: Optional[Callable[[str], None]] = None):
+        """Run dialog and handle response."""
+
+        def on_response(dialog, response):
+            if response == "install" and self.on_install:
+                self.on_install()
+            if callback:
+                callback(response)
+            dialog.destroy()
+
+        self.connect("response", on_response)
+        self.present()
+
+
+def show_toolkit_check(parent: Gtk.Window) -> None:
+    """
+    Check toolkit environment and show dialog if issues found.
+
+    Args:
+        parent: Parent window for the dialog
+    """
+    from unified_theming.utils.system_detect import (
+        detect_environment,
+        get_install_command,
+    )
+
+    env = detect_environment()
+
+    # Determine if we need to show anything
+    missing = env.qt_packages_missing + env.gtk_packages_missing
+    if not missing:
+        return  # All good, no dialog needed
+
+    def on_install():
+        cmd = get_install_command(missing)
+        # Copy to clipboard and show terminal command
+        clipboard = Gdk.Display.get_default().get_clipboard()
+        clipboard.set(cmd)
+
+        # Show info dialog with command
+        info = Adw.MessageDialog.new(parent, "Install Command Copied")
+        info.set_body(
+            f"Run this command in your terminal:\n\n{cmd}\n\n"
+            "(Command has been copied to clipboard)"
+        )
+        info.add_response("ok", "OK")
+        info.present()
+
+    dialog = ToolkitCompatibilityDialog(parent, env, on_install=on_install)
+    dialog.run_async()

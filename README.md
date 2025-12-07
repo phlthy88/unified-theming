@@ -5,8 +5,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/phlthy88/unified-theming"><img src="https://img.shields.io/badge/tests-283%20passing-brightgreen" alt="Tests"></a>
-  <a href="https://github.com/phlthy88/unified-theming"><img src="https://img.shields.io/badge/coverage-48%25-yellow" alt="Coverage"></a>
+  <a href="https://github.com/phlthy88/unified-theming"><img src="https://img.shields.io/badge/tests-386%20passing-brightgreen" alt="Tests"></a>
+  <a href="https://github.com/phlthy88/unified-theming"><img src="https://img.shields.io/badge/coverage-53%25-yellow" alt="Coverage"></a>
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="Python"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
   <a href="https://github.com/phlthy88/unified-theming/releases"><img src="https://img.shields.io/badge/release-v0.5.0-green" alt="Release"></a>
@@ -119,19 +119,48 @@ unified-theming-gui
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────┐
-│        🖥️  User Interface Layer             │
-│       CLI (Click) │ GUI (GTK4/Adwaita)      │
-├─────────────────────────────────────────────┤
-│        ⚙️  Application Core Layer           │
-│    Manager │ Parser │ Config │ Tokens       │
-├─────────────────────────────────────────────┤
-│        🔧 Toolkit Handler Layer             │
-│    GTK │ Qt │ Flatpak │ Snap Handlers       │
-├─────────────────────────────────────────────┤
-│        🎨 Color Engine Layer                │
-│   OKLCH │ WCAG │ Perceptual Operations      │
-└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                         CLI                                  │
+│       apply_theme │ list │ current │ validate │ rollback    │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+         ┌─────────────────┼─────────────────┐
+         │                 │                 │
+         ▼                 ▼                 ▼
+┌─────────────┐   ┌─────────────┐   ┌─────────────┐
+│   Parser    │   │   Tokens    │   │  Renderer   │
+│  GTK/JSON   │──▶│   Schema    │──▶│ GTK/Qt/Shell│
+└─────────────┘   └─────────────┘   └─────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│                       HANDLERS                               │
+│  GTKHandler │ QtHandler │ GnomeShellHandler │ FlatpakHandler│
+└─────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    SYSTEM CONFIG                             │
+│  gtk.css │ kdeglobals │ gnome-shell.css │ flatpak overrides │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Token-Based Workflow (New)
+```python
+from unified_theming.tokens import create_dark_tokens
+from unified_theming.renderers import GTKRenderer, QtRenderer
+from unified_theming.handlers.gtk_handler import GTKHandler
+
+# Create tokens from accent color
+tokens = create_dark_tokens(name="MyTheme")
+
+# Render to any toolkit
+gtk_css = GTKRenderer().render(tokens)
+qt_ini = QtRenderer().render(tokens)
+
+# Apply via handler
+handler = GTKHandler()
+handler.apply_from_tokens(tokens)
 ```
 
 ## 📊 Project Status
@@ -142,12 +171,13 @@ unified-theming-gui
 | 📝 Theme Parser | ✅ Complete |
 | 🖼️ GTK Handler | ✅ Complete |
 | 🔷 Qt Handler | ✅ Complete |
+| 🐚 GNOME Shell Handler | ✅ Complete |
 | 📦 Flatpak Handler | ✅ Complete |
 | 📦 Snap Handler | ⚡ Basic |
 | 💻 CLI | ✅ Complete |
 | 🖥️ GUI | 🚧 Beta |
 
-**Test Suite:** 283 tests passing ✅
+**Test Suite:** 386 tests passing ✅
 
 ## 🗺️ Roadmap
 

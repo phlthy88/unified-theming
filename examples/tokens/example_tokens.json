@@ -1,0 +1,29 @@
+{
+  "surface": {
+    "primary": { "$value": "#ffffff", "$type": "color" },
+    "secondary": { "$value": "#f6f6f6", "$type": "color" },
+    "tertiary": { "$value": "#eeeeee", "$type": "color" }
+  },
+  "content": {
+    "primary": { "$value": "#1a1a1a", "$type": "color" },
+    "secondary": { "$value": "#5c5c5c", "$type": "color" },
+    "on_color": { "$value": "#ffffff", "$type": "color" }
+  },
+  "accent": {
+    "primary": { "$value": "#3584e4", "$type": "color" },
+    "secondary": { "$value": "#729fcf", "$type": "color" }
+  },
+  "state": {
+    "success": { "$value": "#4e9a06", "$type": "color" },
+    "warning": { "$value": "#f57900", "$type": "color" },
+    "error": { "$value": "#cc0000", "$type": "color" },
+    "info": { "$value": "#729fcf", "$type": "color" }
+  },
+  "border": {
+    "primary": { "$value": "#d3d7cf", "$type": "color" },
+    "secondary": { "$value": "#babdb6", "$type": "color" }
+  },
+  "other": {
+    "referenced_color": { "$value": "{accent.primary}", "$type": "color" }
+  }
+}

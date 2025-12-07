@@ -4,7 +4,12 @@ from pathlib import Path
 
 import pytest
 
-from unified_theming.renderers import BaseRenderer, GTKRenderer, RenderedTheme
+from unified_theming.renderers import (
+    BaseRenderer,
+    GTKRenderer,
+    QtRenderer,
+    RenderedTheme,
+)
 from unified_theming.tokens import create_dark_tokens, create_light_tokens
 
 
@@ -124,3 +129,45 @@ class TestGTKRenderer:
         css = result.files[Path("gtk-4.0/gtk.css")]
         assert "Generated from" in css
         assert "TestLight" in css
+
+
+class TestQtRenderer:
+    """Test Qt renderer."""
+
+    @pytest.fixture
+    def renderer(self):
+        return QtRenderer()
+
+    @pytest.fixture
+    def light_tokens(self):
+        return create_light_tokens(name="QtLight")
+
+    @pytest.fixture
+    def dark_tokens(self):
+        return create_dark_tokens(name="QtDark")
+
+    def test_render_returns_rendered_theme(self, renderer, light_tokens):
+        result = renderer.render(light_tokens)
+        assert isinstance(result, RenderedTheme)
+        assert result.toolkit == "qt"
+
+    def test_render_generates_kdeglobals_file(self, renderer, light_tokens):
+        result = renderer.render(light_tokens)
+        assert Path("kdeglobals") in result.files
+
+    def test_kdeglobals_contains_sections(self, renderer, light_tokens):
+        result = renderer.render(light_tokens)
+        kdeglobals = result.files[Path("kdeglobals")]
+        assert "[Colors:Window]" in kdeglobals
+        assert "[Colors:Selection]" in kdeglobals
+        assert "BackgroundNormal=255,255,255" in kdeglobals
+        assert "ForegroundNormal=26,26,26" in kdeglobals
+
+    def test_kdeglobals_uses_accent_for_selection(self, renderer, light_tokens):
+        result = renderer.render(light_tokens)
+        kdeglobals = result.files[Path("kdeglobals")]
+        assert "BackgroundNormal=53,132,228" in kdeglobals  # accent primary
+
+    def test_settings_include_color_scheme(self, renderer, dark_tokens):
+        result = renderer.render(dark_tokens)
+        assert result.settings["color-scheme"] == "QtDark"
