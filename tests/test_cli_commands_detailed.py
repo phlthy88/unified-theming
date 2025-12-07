@@ -331,8 +331,8 @@ class TestConvertCommand:
                 "unified_theming.cli.commands.UnifiedThemeManager"
             ) as mock_manager_class:
                 mock_manager = Mock()
-                mock_manager.convert_theme_to_tokens.return_value = (
-                    create_light_tokens(name="Converted")
+                mock_manager.convert_theme_to_tokens.return_value = create_light_tokens(
+                    name="Converted"
                 )
                 mock_manager.tokens_to_json.return_value = '{"name": "Converted"}'
                 mock_manager_class.return_value = mock_manager

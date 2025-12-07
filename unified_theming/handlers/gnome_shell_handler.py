@@ -446,14 +446,6 @@ class GnomeShellHandler(BaseHandler):
                 component="gnome_shell_handler",
             )
 
-        # Check for required color variables
-        if not theme_data.colors:
-            result.add_warning(
-                f"Theme '{theme_data.name}' has no color definitions, "
-                "shell styling may not be applied correctly",
-                component="gnome_shell_handler",
-            )
-
         return result
 
     def is_available(self) -> bool:

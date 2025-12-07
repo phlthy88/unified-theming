@@ -452,11 +452,7 @@ class UnifiedThemeManager:
 
         theme_info = themes[theme_name]
         bg_color = self._parse_color(theme_info.get_color("theme_bg_color"))
-        variant = (
-            "dark"
-            if bg_color and bg_color.luminance() < 0.5
-            else "light"
-        )
+        variant = "dark" if bg_color and bg_color.luminance() < 0.5 else "light"
         tokens = (
             create_dark_tokens(name=theme_info.name)
             if variant == "dark"
@@ -492,7 +488,9 @@ class UnifiedThemeManager:
 
         return tokens
 
-    def render_tokens(self, token_path: Path, target: str, output_dir: Path) -> List[Path]:
+    def render_tokens(
+        self, token_path: Path, target: str, output_dir: Path
+    ) -> List[Path]:
         """
         Render a token file to configuration files for a target toolkit.
 
@@ -742,9 +740,11 @@ class UnifiedThemeManager:
             "state": {
                 "hover_overlay": tokens.states.hover_overlay,
                 "pressed_overlay": tokens.states.pressed_overlay,
-                "focus_ring": color_hex(tokens.states.focus_ring)
-                if tokens.states.focus_ring
-                else None,
+                "focus_ring": (
+                    color_hex(tokens.states.focus_ring)
+                    if tokens.states.focus_ring
+                    else None
+                ),
                 "disabled_opacity": tokens.states.disabled_opacity,
             },
             "border": {

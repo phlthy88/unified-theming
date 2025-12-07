@@ -309,17 +309,18 @@ class GTKHandler(BaseHandler):
                 component="gtk_handler",
             )
 
-        # Check if required color variables are present
-        required_colors = ["theme_bg_color", "theme_fg_color"]
-        missing_colors = [
-            color for color in required_colors if color not in theme_data.colors
-        ]
+        # Check if required color variables are present (only if colors dict is populated)
+        if theme_data.colors:
+            required_colors = ["theme_bg_color", "theme_fg_color"]
+            missing_colors = [
+                color for color in required_colors if color not in theme_data.colors
+            ]
 
-        if missing_colors:
-            result.add_warning(
-                f"Theme '{theme_data.name}' missing required colors for GTK: {', '.join(missing_colors)}",
-                component="gtk_handler",
-            )
+            if missing_colors:
+                result.add_warning(
+                    f"Theme '{theme_data.name}' missing required colors for GTK: {', '.join(missing_colors)}",
+                    component="gtk_handler",
+                )
 
         # Perform WCAG contrast checks
         gtk_color_pairs = [
