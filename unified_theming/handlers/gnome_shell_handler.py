@@ -95,7 +95,7 @@ class GnomeShellHandler(BaseHandler):
 
             # Apply shell theme via GSettings
             if not self._apply_shell_theme_gsettings(theme_data.name):
-                logger.error(f"Failed to apply shell theme: {theme_data.name}")
+                logger.warning(f"Could not apply shell theme: {theme_data.name} (extension may not be installed)")
                 success = False
 
             # Generate and apply custom shell CSS if colors are provided
