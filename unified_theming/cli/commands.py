@@ -85,7 +85,10 @@ def cli(ctx, verbose: int, config: Optional[Path], no_color: bool):
     Examples:
         unified-theming list
         unified-theming apply_theme Nord
+        unified-theming apply_theme --from-tokens tokens.json
         unified-theming current
+        unified-theming convert Adwaita-dark --output tokens.json
+        unified-theming render tokens.json --target gtk --output ./out
         unified-theming rollback
 
     For more information, visit: https://github.com/yourusername/unified-theming
@@ -180,7 +183,7 @@ def list(ctx, targets: Tuple[str, ...], format: str):
 
 
 @cli.command(name="apply_theme")
-@click.argument("theme_name")
+@click.argument("theme_name", required=False)
 @click.option(
     "--targets",
     multiple=True,
@@ -195,8 +198,16 @@ def list(ctx, targets: Tuple[str, ...], format: str):
     is_flag=True,
     help="Preview changes without applying them (safe, non-destructive)",
 )
+@click.option(
+    "--from-tokens",
+    "token_file",
+    type=click.Path(exists=True, path_type=Path),
+    help="Apply configuration from a JSON token file instead of a discovered theme",
+)
 @click.pass_context
-def apply(ctx, theme_name: str, targets: Tuple[str, ...], dry_run: bool):
+def apply(
+    ctx, theme_name: Optional[str], targets: Tuple[str, ...], dry_run: bool, token_file
+):
     """
     Apply THEME_NAME to specified targets.
 
@@ -205,6 +216,7 @@ def apply(ctx, theme_name: str, targets: Tuple[str, ...], dry_run: bool):
         unified-theming apply_theme Nord
         unified-theming apply_theme Nord --dry-run
         unified-theming apply_theme Dracula --targets gtk4 --targets libadwaita
+        unified-theming apply_theme --from-tokens tokens.json
     """
     try:
         manager = UnifiedThemeManager(config_path=ctx.obj.get("config"))
@@ -225,73 +237,104 @@ def apply(ctx, theme_name: str, targets: Tuple[str, ...], dry_run: bool):
             else:
                 target_list = mapped_handlers
 
-        # Dry-run mode: preview changes without applying
-        if dry_run:
-            click.secho(f"Planning theme '{theme_name}' (dry-run mode)...", fg="cyan")
-            plan_result = manager.plan_changes(theme_name, targets=target_list)
+        # Token-based application path
+        if token_file:
+            if dry_run:
+                click.secho(
+                    "Dry-run is not supported with --from-tokens; applying directly.",
+                    fg="yellow",
+                )
+            click.echo(f"Applying tokens from '{token_file}'...")
+            result = manager.apply_theme_from_tokens(token_file, targets=target_list)
+            theme_label = result.theme_name
+        else:
+            if not theme_name:
+                click.secho(
+                    "Please provide THEME_NAME or --from-tokens PATH",
+                    fg="red",
+                    err=True,
+                )
+                sys.exit(2)
 
-            # Display plan summary
-            click.secho(f"\n✓ Planning complete for theme '{theme_name}'", fg="green")
-            click.echo(
-                f"  Files that would be affected: {plan_result.estimated_files_affected}"
-            )
-            click.echo(f"  Total changes: {len(plan_result.planned_changes)}")
+            # Dry-run mode: preview changes without applying
+            if dry_run:
+                click.secho(
+                    f"Planning theme '{theme_name}' (dry-run mode)...", fg="cyan"
+                )
+                plan_result = manager.plan_changes(theme_name, targets=target_list)
 
-            # Show handler availability
-            click.echo("\nHandler Availability:")
-            for handler_name, available in plan_result.available_handlers.items():
-                status = "✓ Available" if available else "✗ Not available"
-                color = "green" if available else "yellow"
-                click.secho(f"  {handler_name}: {status}", fg=color)
+                # Display plan summary
+                click.secho(
+                    f"\n✓ Planning complete for theme '{theme_name}'", fg="green"
+                )
+                click.echo(
+                    f"  Files that would be affected: {plan_result.estimated_files_affected}"
+                )
+                click.echo(f"  Total changes: {len(plan_result.planned_changes)}")
 
-            # Show validation results
-            if plan_result.validation_result and plan_result.validation_result.messages:
-                click.echo("\nValidation:")
-                for msg in plan_result.validation_result.messages:
-                    color = {"ERROR": "red", "WARNING": "yellow", "INFO": "blue"}.get(
-                        msg.level.value.upper(), "white"
-                    )
-                    click.secho(
-                        f"  [{msg.level.value.upper()}] {msg.message}", fg=color
-                    )
+                # Show handler availability
+                click.echo("\nHandler Availability:")
+                for handler_name, available in plan_result.available_handlers.items():
+                    status = "✓ Available" if available else "✗ Not available"
+                    color = "green" if available else "yellow"
+                    click.secho(f"  {handler_name}: {status}", fg=color)
 
-            # Show planned changes by handler
-            if plan_result.planned_changes:
-                click.echo("\nPlanned Changes:")
-                for handler_name in plan_result.available_handlers.keys():
-                    handler_changes = plan_result.get_changes_by_handler(handler_name)
-                    if handler_changes:
-                        click.echo(f"\n  {handler_name}:")
-                        for change in handler_changes:
-                            click.echo(
-                                f"    {change.change_type.upper()}: {change.file_path}"
-                            )
-                            click.echo(f"      {change.description}")
-            else:
-                click.echo("\nNo changes would be made.")
+                # Show validation results
+                if (
+                    plan_result.validation_result
+                    and plan_result.validation_result.messages
+                ):
+                    click.echo("\nValidation:")
+                    for msg in plan_result.validation_result.messages:
+                        color = {
+                            "ERROR": "red",
+                            "WARNING": "yellow",
+                            "INFO": "blue",
+                        }.get(msg.level.value.upper(), "white")
+                        click.secho(
+                            f"  [{msg.level.value.upper()}] {msg.message}", fg=color
+                        )
 
-            # Show warnings
-            if plan_result.warnings:
-                click.echo("\nWarnings:")
-                for warning in plan_result.warnings:
-                    click.secho(f"  ⚠ {warning}", fg="yellow")
+                # Show planned changes by handler
+                if plan_result.planned_changes:
+                    click.echo("\nPlanned Changes:")
+                    for handler_name in plan_result.available_handlers.keys():
+                        handler_changes = plan_result.get_changes_by_handler(
+                            handler_name
+                        )
+                        if handler_changes:
+                            click.echo(f"\n  {handler_name}:")
+                            for change in handler_changes:
+                                click.echo(
+                                    f"    {change.change_type.upper()}: {change.file_path}"
+                                )
+                                click.echo(f"      {change.description}")
+                else:
+                    click.echo("\nNo changes would be made.")
 
-            click.echo("\n" + "=" * 70)
-            click.secho(
-                "DRY-RUN MODE: No changes were made to your system.",
-                fg="cyan",
-                bold=True,
-            )
-            click.echo("Run without --dry-run to apply these changes.")
-            return
+                # Show warnings
+                if plan_result.warnings:
+                    click.echo("\nWarnings:")
+                    for warning in plan_result.warnings:
+                        click.secho(f"  ⚠ {warning}", fg="yellow")
 
-        # Apply theme (actual mode)
-        click.echo(f"Applying theme '{theme_name}'...")
-        result = manager.apply_theme(theme_name, targets=target_list)
+                click.echo("\n" + "=" * 70)
+                click.secho(
+                    "DRY-RUN MODE: No changes were made to your system.",
+                    fg="cyan",
+                    bold=True,
+                )
+                click.echo("Run without --dry-run to apply these changes.")
+                return
 
-        # Display results
+            # Apply theme (actual mode)
+            click.echo(f"Applying theme '{theme_name}'...")
+            result = manager.apply_theme(theme_name, targets=target_list)
+            theme_label = theme_name
+
+        # Display results for both token and theme paths
         if result.overall_success:
-            click.secho(f"✓ Theme '{theme_name}' applied successfully!", fg="green")
+            click.secho(f"✓ Theme '{theme_label}' applied successfully!", fg="green")
         else:
             click.secho(f"⚠ Theme applied with warnings", fg="yellow")
 
@@ -311,6 +354,83 @@ def apply(ctx, theme_name: str, targets: Tuple[str, ...], dry_run: bool):
 
     except Exception as e:
         click.secho(f"✗ Error applying theme: {e}", fg="red", err=True)
+        sys.exit(1)
+
+
+# ============================================================================
+# Convert Command
+# ============================================================================
+
+
+@cli.command()
+@click.argument("theme_name")
+@click.option(
+    "--output",
+    "-o",
+    required=True,
+    type=click.Path(path_type=Path),
+    help="Path to write JSON token output",
+)
+@click.pass_context
+def convert(ctx, theme_name: str, output: Path):
+    """
+    Convert THEME_NAME into a JSON token file.
+
+    \b
+    Examples:
+        unified-theming convert Adwaita-dark --output tokens.json
+    """
+    try:
+        manager = UnifiedThemeManager(config_path=ctx.obj.get("config"))
+        tokens = manager.convert_theme_to_tokens(theme_name)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(manager.tokens_to_json(tokens))
+        click.secho(f"✓ Tokens for '{theme_name}' written to {output}", fg="green")
+    except Exception as e:
+        click.secho(f"✗ Error converting theme: {e}", fg="red", err=True)
+        sys.exit(1)
+
+
+# ============================================================================
+# Render Command
+# ============================================================================
+
+
+@cli.command()
+@click.argument("token_file", type=click.Path(exists=True, path_type=Path))
+@click.option(
+    "--target",
+    required=True,
+    type=click.Choice(["gtk", "qt", "gnome-shell"], case_sensitive=False),
+    help="Target toolkit to render for",
+)
+@click.option(
+    "--output",
+    "-o",
+    default=Path.cwd(),
+    type=click.Path(path_type=Path),
+    help="Directory to write rendered configuration files",
+)
+@click.pass_context
+def render(ctx, token_file: Path, target: str, output: Path):
+    """
+    Render TOKEN_FILE to configuration files for a target toolkit.
+
+    \b
+    Examples:
+        unified-theming render tokens.json --target gtk --output ./out
+    """
+    try:
+        manager = UnifiedThemeManager(config_path=ctx.obj.get("config"))
+        written = manager.render_tokens(token_file, target, output)
+        click.secho(
+            f"✓ Rendered {len(written)} files for {target} into {output}",
+            fg="green",
+        )
+        for path in written:
+            click.echo(f"  - {path}")
+    except Exception as e:
+        click.secho(f"✗ Error rendering tokens: {e}", fg="red", err=True)
         sys.exit(1)
 
 
@@ -539,6 +659,168 @@ def check_deps():
 
     if not env.qt_packages_missing and not env.gtk_packages_missing:
         click.secho("✓ All cross-toolkit theming packages installed!", fg="green")
+
+
+# ============================================================================
+# Create Command (Day 4)
+# ============================================================================
+
+
+@cli.command()
+@click.argument("theme_name")
+@click.option(
+    "--accent",
+    "-a",
+    type=str,
+    help="Accent color in hex format (e.g., #3584e4)",
+)
+@click.option(
+    "--variant",
+    "-v",
+    type=click.Choice(["light", "dark"], case_sensitive=False),
+    default="dark",
+    help="Theme variant (default: dark)",
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(),
+    help="Output path for token JSON file",
+)
+@click.option(
+    "--apply",
+    is_flag=True,
+    help="Apply the created theme immediately",
+)
+@click.pass_context
+def create(
+    ctx,
+    theme_name: str,
+    accent: Optional[str],
+    variant: str,
+    output: Optional[str],
+    apply: bool,
+):
+    """Create a new theme from scratch using tokens.
+
+    \b
+    Examples:
+        unified-theming create MyTheme
+        unified-theming create MyTheme --accent "#ff5500" --variant dark
+        unified-theming create MyTheme --accent "#3584e4" --apply
+        unified-theming create MyTheme -a "#2ec27e" -v light -o mytheme.json
+    """
+    from unified_theming.color.spaces import Color
+    from unified_theming.tokens import create_light_tokens, create_dark_tokens
+    from unified_theming.tokens.validation import validate_tokens
+
+    try:
+        # Parse accent color if provided
+        accent_color = None
+        if accent:
+            try:
+                accent_color = Color.from_hex(accent)
+                click.echo(f"Using accent color: {accent}")
+            except Exception as e:
+                click.secho(
+                    f"✗ Invalid accent color '{accent}': {e}", fg="red", err=True
+                )
+                sys.exit(1)
+
+        # Create tokens based on variant
+        click.echo(f"Creating {variant} theme '{theme_name}'...")
+        if variant == "light":
+            tokens = create_light_tokens(accent=accent_color, name=theme_name)
+        else:
+            tokens = create_dark_tokens(accent=accent_color, name=theme_name)
+
+        # Validate tokens
+        validation = validate_tokens(tokens)
+        if not validation.valid:
+            click.secho("✗ Token validation failed:", fg="red")
+            for msg in validation.messages:
+                click.echo(f"  - {msg.message}")
+            sys.exit(1)
+
+        click.secho(f"✓ Created valid {variant} theme tokens", fg="green")
+
+        # Save to file if output specified
+        if output:
+            import json
+
+            output_path = Path(output)
+            token_dict = {
+                "name": tokens.name,
+                "variant": tokens.variant,
+                "surface": {
+                    "primary": {"$value": tokens.surfaces.primary.to_hex()},
+                    "secondary": {"$value": tokens.surfaces.secondary.to_hex()},
+                    "tertiary": {"$value": tokens.surfaces.tertiary.to_hex()},
+                    "elevated": {"$value": tokens.surfaces.elevated.to_hex()},
+                },
+                "content": {
+                    "primary": {"$value": tokens.content.primary.to_hex()},
+                    "secondary": {"$value": tokens.content.secondary.to_hex()},
+                    "inverse": {"$value": tokens.content.inverse.to_hex()},
+                    "link": {"$value": tokens.content.link.to_hex()},
+                    "link_visited": {"$value": tokens.content.link_visited.to_hex()},
+                },
+                "accent": {
+                    "primary": {"$value": tokens.accents.primary.to_hex()},
+                    "primary_container": {
+                        "$value": tokens.accents.primary_container.to_hex()
+                    },
+                    "success": {"$value": tokens.accents.success.to_hex()},
+                    "warning": {"$value": tokens.accents.warning.to_hex()},
+                    "error": {"$value": tokens.accents.error.to_hex()},
+                },
+            }
+            output_path.write_text(json.dumps(token_dict, indent=2))
+            click.secho(f"✓ Saved tokens to: {output_path}", fg="green")
+
+        # Apply if requested
+        if apply:
+            click.echo("Applying theme...")
+            manager = UnifiedThemeManager(config_path=ctx.obj.get("config"))
+
+            from unified_theming.handlers.gtk_handler import GTKHandler
+            from unified_theming.handlers.qt_handler import QtHandler
+
+            gtk_handler = GTKHandler()
+            qt_handler = QtHandler()
+
+            gtk_success = gtk_handler.apply_from_tokens(tokens)
+            qt_success = qt_handler.apply_from_tokens(tokens)
+
+            if gtk_success:
+                click.secho("  ✓ Applied to GTK", fg="green")
+            else:
+                click.secho("  ✗ Failed to apply to GTK", fg="red")
+
+            if qt_success:
+                click.secho("  ✓ Applied to Qt", fg="green")
+            else:
+                click.secho("  ✗ Failed to apply to Qt", fg="red")
+
+            if gtk_success and qt_success:
+                click.secho(f"✓ Theme '{theme_name}' applied successfully!", fg="green")
+            else:
+                click.secho("⚠ Theme partially applied", fg="yellow")
+
+        # Show summary if not saving or applying
+        if not output and not apply:
+            click.echo()
+            click.echo("Token summary:")
+            click.echo(f"  Name: {tokens.name}")
+            click.echo(f"  Variant: {tokens.variant}")
+            click.echo(f"  Primary surface: {tokens.surfaces.primary.to_hex()}")
+            click.echo(f"  Primary accent: {tokens.accents.primary.to_hex()}")
+            click.echo()
+            click.echo("Use --output to save or --apply to apply immediately")
+
+    except Exception as e:
+        click.secho(f"✗ Error creating theme: {e}", fg="red", err=True)
+        sys.exit(1)
 
 
 # ============================================================================

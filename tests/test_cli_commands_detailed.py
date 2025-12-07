@@ -13,9 +13,11 @@ from click.testing import CliRunner
 from unified_theming.cli.commands import (
     apply,
     cli,
+    convert,
     current,
     list,
     main,
+    render,
     rollback,
     validate,
 )
@@ -28,6 +30,7 @@ from unified_theming.core.types import (
     ValidationMessage,
     ValidationResult,
 )
+from unified_theming.tokens.defaults import create_light_tokens
 
 
 @pytest.fixture
@@ -290,6 +293,94 @@ class TestApplyCommand:
                 result.exit_code == 0
             )  # Even with failures, exit code is 0 if no exception
             assert "✗ gtk: Failed to apply theme" in result.output
+
+    def test_apply_from_tokens(self, cli_runner, tmp_path):
+        """apply_theme should accept --from-tokens flag."""
+        token_file = tmp_path / "tokens.json"
+        token_file.write_text("{}")
+
+        with patch(
+            "unified_theming.cli.commands.UnifiedThemeManager"
+        ) as mock_manager_class:
+            mock_manager = Mock()
+            mock_manager.apply_theme_from_tokens.return_value = ApplicationResult(
+                theme_name="TokenTheme",
+                overall_success=True,
+                handler_results={},
+            )
+            mock_manager_class.return_value = mock_manager
+
+            result = cli_runner.invoke(
+                cli,
+                ["apply_theme", "--from-tokens", str(token_file)],
+            )
+            assert result.exit_code == 0
+            assert "Applying tokens from" in result.output
+            assert "TokenTheme" in result.output
+            mock_manager.apply_theme_from_tokens.assert_called_once()
+
+
+class TestConvertCommand:
+    """Test the convert command functionality."""
+
+    def test_convert_writes_output(self, cli_runner):
+        """convert should write JSON tokens to the requested path."""
+        with cli_runner.isolated_filesystem():
+            output_path = Path("tokens.json")
+            with patch(
+                "unified_theming.cli.commands.UnifiedThemeManager"
+            ) as mock_manager_class:
+                mock_manager = Mock()
+                mock_manager.convert_theme_to_tokens.return_value = (
+                    create_light_tokens(name="Converted")
+                )
+                mock_manager.tokens_to_json.return_value = '{"name": "Converted"}'
+                mock_manager_class.return_value = mock_manager
+
+                result = cli_runner.invoke(
+                    cli, ["convert", "Adwaita-dark", "--output", str(output_path)]
+                )
+
+                assert result.exit_code == 0
+                assert output_path.exists()
+                assert "Converted" in output_path.read_text()
+                mock_manager.convert_theme_to_tokens.assert_called_once_with(
+                    "Adwaita-dark"
+                )
+
+
+class TestRenderCommand:
+    """Test the render command functionality."""
+
+    def test_render_invokes_manager(self, cli_runner):
+        """render should call manager.render_tokens with correct args."""
+        with cli_runner.isolated_filesystem():
+            token_file = Path("tokens.json")
+            token_file.write_text("{}")
+            with patch(
+                "unified_theming.cli.commands.UnifiedThemeManager"
+            ) as mock_manager_class:
+                mock_manager = Mock()
+                mock_manager.render_tokens.return_value = [
+                    Path("output/gtk-4.0/gtk.css")
+                ]
+                mock_manager_class.return_value = mock_manager
+
+                result = cli_runner.invoke(
+                    cli,
+                    [
+                        "render",
+                        str(token_file),
+                        "--target",
+                        "gtk",
+                        "--output",
+                        "./output",
+                    ],
+                )
+
+                assert result.exit_code == 0
+                assert "Rendered 1 files for gtk" in result.output
+                mock_manager.render_tokens.assert_called_once()
 
 
 class TestCurrentCommand:
@@ -602,7 +693,7 @@ class TestArgumentParsing:
         result = cli_runner.invoke(cli, ["apply_theme"])
         # Should fail because theme name is required
         assert result.exit_code != 0
-        assert "Usage:" in result.output or "Error:" in result.output
+        assert "Please provide THEME_NAME or --from-tokens" in result.output
 
     def test_validate_command_missing_theme_name(self, cli_runner):
         """Test validate command when theme name is missing."""

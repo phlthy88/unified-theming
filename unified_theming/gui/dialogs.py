@@ -146,12 +146,14 @@ class SettingsDialog(Adw.PreferencesWindow):
         backup_group.add(self.enable_backups_switch)
 
         # Max backups spin button
-        self.max_backups_row = Adw.SpinRow.new()
+        max_backups_adjustment = Gtk.Adjustment.new(
+            self.config.get("max_backups", 10), 1, 100, 1, 5, 0
+        )
+        self.max_backups_row = Adw.SpinRow.new(
+            max_backups_adjustment, 1, 0
+        )  # climb rate 1, no decimals
         self.max_backups_row.set_title("Maximum backups")
         self.max_backups_row.set_subtitle("Maximum number of backups to keep")
-        self.max_backups_row.set_adjustment(
-            Gtk.Adjustment.new(self.config.get("max_backups", 10), 1, 100, 1, 5, 0)
-        )
         backup_group.add(self.max_backups_row)
 
         # Advanced page
@@ -187,19 +189,19 @@ class SettingsDialog(Adw.PreferencesWindow):
         cache_group.add(self.cache_switch)
 
         # Cache expiry spin button
-        self.cache_expiry_row = Adw.SpinRow.new()
+        cache_expiry_adjustment = Gtk.Adjustment.new(
+            self.config.get("cache_expiry_hours", 24),
+            1,
+            168,
+            1,
+            6,
+            0,  # 1 hour to 1 week
+        )
+        self.cache_expiry_row = Adw.SpinRow.new(
+            cache_expiry_adjustment, 1, 0
+        )  # climb rate 1, no decimals
         self.cache_expiry_row.set_title("Cache expiry (hours)")
         self.cache_expiry_row.set_subtitle("How long to keep cached theme data")
-        self.cache_expiry_row.set_adjustment(
-            Gtk.Adjustment.new(
-                self.config.get("cache_expiry_hours", 24),
-                1,
-                168,
-                1,
-                6,
-                0,  # 1 hour to 1 week
-            )
-        )
         cache_group.add(self.cache_expiry_row)
 
     def get_config(self) -> Dict[str, Any]:

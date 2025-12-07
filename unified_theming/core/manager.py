@@ -5,6 +5,7 @@ This module implements the UnifiedThemeManager which orchestrates
 theme application across all handlers and manages the overall process.
 """
 
+import json
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -14,6 +15,10 @@ from ..handlers.gnome_shell_handler import GnomeShellHandler
 from ..handlers.gtk_handler import GTKHandler
 from ..handlers.qt_handler import QtHandler
 from ..handlers.snap_handler import SnapHandler
+from ..parsers.json_tokens import JSONTokenParser
+from ..renderers import GnomeShellRenderer, GTKRenderer, QtRenderer
+from ..tokens.defaults import create_dark_tokens, create_light_tokens
+from ..tokens.schema import UniversalTokenSchema
 from ..utils.logging_config import get_logger
 from .config import ConfigManager
 from .exceptions import (
@@ -61,6 +66,7 @@ class UnifiedThemeManager:
             "flatpak": FlatpakHandler(),
             "snap": SnapHandler(),
         }
+        self._token_parser = JSONTokenParser()
 
         logger.info("UnifiedThemeManager initialized with all handlers")
 
@@ -239,6 +245,102 @@ class UnifiedThemeManager:
         )
         return application_result
 
+    def apply_theme_from_tokens(
+        self, token_path: Path, targets: Optional[List[str]] = None
+    ) -> ApplicationResult:
+        """
+        Apply a theme using a token file instead of a discovered theme.
+
+        Args:
+            token_path: Path to JSON token file
+            targets: Handlers to target (None means all available)
+
+        Returns:
+            ApplicationResult capturing per-handler outcomes
+        """
+        tokens = self._load_tokens(token_path)
+        logger.info(
+            f"Applying tokens from {token_path} (theme '{tokens.name}') "
+            f"to targets: {targets or 'all'}"
+        )
+
+        if targets is None:
+            handlers_to_use = self.handlers
+        else:
+            handlers_to_use = {
+                name: handler
+                for name, handler in self.handlers.items()
+                if name in targets
+            }
+
+        backup_id = None
+        try:
+            backup_id = self.config_manager.backup_current_state()
+        except Exception as e:
+            logger.error(f"Failed to create backup before token application: {e}")
+
+        handler_results: Dict[str, HandlerResult] = {}
+        critical_failures = 0
+        total_handlers = len(handlers_to_use)
+
+        for handler_name, handler in handlers_to_use.items():
+            try:
+                if not handler.is_available():
+                    handler_results[handler_name] = HandlerResult(
+                        handler_name=handler_name,
+                        toolkit=handler.toolkit,
+                        success=False,
+                        message="Handler not available",
+                        details="Toolkit not installed on system",
+                    )
+                    continue
+
+                if not hasattr(handler, "apply_from_tokens"):
+                    handler_results[handler_name] = HandlerResult(
+                        handler_name=handler_name,
+                        toolkit=handler.toolkit,
+                        success=False,
+                        message="Handler does not support token application",
+                    )
+                    critical_failures += 1
+                    continue
+
+                success = handler.apply_from_tokens(tokens)  # type: ignore[attr-defined]
+
+                handler_results[handler_name] = HandlerResult(
+                    handler_name=handler_name,
+                    toolkit=handler.toolkit,
+                    success=success,
+                    message="Applied successfully" if success else "Application failed",
+                )
+
+                if not success:
+                    critical_failures += 1
+
+            except Exception as e:
+                handler_results[handler_name] = HandlerResult(
+                    handler_name=handler_name,
+                    toolkit=handler.toolkit,
+                    success=False,
+                    message="Application failed",
+                    details=str(e),
+                )
+                critical_failures += 1
+
+        success_ratio = (
+            (total_handlers - critical_failures) / total_handlers
+            if total_handlers > 0
+            else 1.0
+        )
+        overall_success = success_ratio > 0.5
+
+        return ApplicationResult(
+            theme_name=tokens.name,
+            overall_success=overall_success,
+            handler_results=handler_results,
+            backup_id=backup_id,
+        )
+
     def plan_changes(
         self, theme_name: str, targets: Optional[List[str]] = None
     ) -> PlanResult:
@@ -330,6 +432,90 @@ class UnifiedThemeManager:
             f"Planning completed: {len(all_planned_changes)} changes would be made to {plan_result.estimated_files_affected} files"
         )
         return plan_result
+
+    def convert_theme_to_tokens(self, theme_name: str) -> UniversalTokenSchema:
+        """
+        Convert a discovered theme into the universal token schema.
+
+        Args:
+            theme_name: Name of a theme available to the parser
+
+        Returns:
+            UniversalTokenSchema populated from the theme where possible
+        """
+        logger.info(f"Converting theme '{theme_name}' to tokens")
+        themes = self.discover_themes()
+        if theme_name not in themes:
+            raise ThemeNotFoundError(
+                theme_name, searched_paths=list(self.parser.theme_directories)
+            )
+
+        theme_info = themes[theme_name]
+        bg_color = self._parse_color(theme_info.get_color("theme_bg_color"))
+        variant = (
+            "dark"
+            if bg_color and bg_color.luminance() < 0.5
+            else "light"
+        )
+        tokens = (
+            create_dark_tokens(name=theme_info.name)
+            if variant == "dark"
+            else create_light_tokens(name=theme_info.name)
+        )
+        tokens.source = "converted-theme"
+
+        mappings = {
+            "theme_bg_color": ("surfaces", "primary"),
+            "theme_base_color": ("surfaces", "secondary"),
+            "theme_fg_color": ("content", "primary"),
+            "theme_text_color": ("content", "secondary"),
+            "theme_selected_bg_color": ("accents", "primary"),
+            "theme_selected_fg_color": ("content", "inverse"),
+            "link_color": ("content", "link"),
+            "visited_link_color": ("content", "link_visited"),
+            "success_color": ("accents", "success"),
+            "warning_color": ("accents", "warning"),
+            "error_color": ("accents", "error"),
+            "borders": ("borders", "default"),
+        }
+
+        for color_key, (group, attribute) in mappings.items():
+            color_value = self._parse_color(theme_info.get_color(color_key))
+            if color_value:
+                getattr(tokens, group).__setattr__(attribute, color_value)
+                if group == "surfaces" and attribute == "secondary":
+                    tokens.surfaces.tertiary = color_value
+                    tokens.surfaces.elevated = color_value
+                if group == "borders":
+                    tokens.borders.subtle = color_value
+                    tokens.borders.strong = color_value
+
+        return tokens
+
+    def render_tokens(self, token_path: Path, target: str, output_dir: Path) -> List[Path]:
+        """
+        Render a token file to configuration files for a target toolkit.
+
+        Args:
+            token_path: Path to JSON tokens
+            target: Target renderer ('gtk', 'qt', 'gnome-shell')
+            output_dir: Directory to write rendered files into
+
+        Returns:
+            List of written file paths
+        """
+        tokens = self._load_tokens(token_path)
+        renderer = self._get_renderer_for_target(target)
+        rendered = renderer.render(tokens)
+
+        written_paths: List[Path] = []
+        for rel_path, content in rendered.files.items():
+            destination = output_dir / rel_path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_text(content)
+            written_paths.append(destination)
+
+        return written_paths
 
     def _prepare_theme_data(
         self, theme_info: ThemeInfo, target_toolkit: Toolkit
@@ -505,3 +691,78 @@ class UnifiedThemeManager:
             ThemeNotFoundError: If theme doesn't exist
         """
         return self.load_theme(theme_name)
+
+    def _load_tokens(self, token_path: Path) -> UniversalTokenSchema:
+        """Load tokens from a JSON file using the token parser."""
+        return self._token_parser.parse(token_path)
+
+    def _parse_color(self, value: Optional[str]):
+        """Try to parse a hex string to Color, returning None on failure."""
+        if value is None:
+            return None
+        try:
+            from ..color.spaces import Color
+
+            return Color.from_hex(value)
+        except Exception:
+            return None
+
+    def tokens_to_json(self, tokens: UniversalTokenSchema) -> str:
+        """Serialize token schema to a JSON string."""
+
+        def color_hex(color):
+            return color.to_hex() if color else None
+
+        data = {
+            "name": tokens.name,
+            "variant": tokens.variant,
+            "surface": {
+                "primary": color_hex(tokens.surfaces.primary),
+                "secondary": color_hex(tokens.surfaces.secondary),
+                "tertiary": color_hex(tokens.surfaces.tertiary),
+                "elevated": color_hex(tokens.surfaces.elevated),
+                "inverse": color_hex(tokens.surfaces.inverse),
+            },
+            "content": {
+                "primary": color_hex(tokens.content.primary),
+                "secondary": color_hex(tokens.content.secondary),
+                "tertiary": color_hex(tokens.content.tertiary),
+                "inverse": color_hex(tokens.content.inverse),
+                "link": color_hex(tokens.content.link),
+                "link_visited": color_hex(tokens.content.link_visited),
+            },
+            "accent": {
+                "primary": color_hex(tokens.accents.primary),
+                "primary_container": color_hex(tokens.accents.primary_container),
+                "secondary": color_hex(tokens.accents.secondary),
+                "success": color_hex(tokens.accents.success),
+                "warning": color_hex(tokens.accents.warning),
+                "error": color_hex(tokens.accents.error),
+            },
+            "state": {
+                "hover_overlay": tokens.states.hover_overlay,
+                "pressed_overlay": tokens.states.pressed_overlay,
+                "focus_ring": color_hex(tokens.states.focus_ring)
+                if tokens.states.focus_ring
+                else None,
+                "disabled_opacity": tokens.states.disabled_opacity,
+            },
+            "border": {
+                "subtle": color_hex(tokens.borders.subtle),
+                "default": color_hex(tokens.borders.default),
+                "strong": color_hex(tokens.borders.strong),
+            },
+            "source": tokens.source,
+        }
+        return json.dumps(data, indent=2)
+
+    def _get_renderer_for_target(self, target: str):
+        """Return renderer instance for target string."""
+        normalized = target.lower()
+        if normalized in {"gtk", "gtk3", "gtk4", "libadwaita"}:
+            return GTKRenderer()
+        if normalized in {"qt", "qt5", "qt6"}:
+            return QtRenderer()
+        if normalized in {"gnome-shell", "gnome_shell", "shell"}:
+            return GnomeShellRenderer()
+        raise ValueError(f"Unsupported render target: {target}")
