@@ -22,11 +22,25 @@ def validate_tokens(schema: UniversalTokenSchema) -> TokenValidationResult:
 
     Checks:
     - Content/surface contrast meets WCAG AA (4.5:1)
+    - Secondary content contrast (min 3:1)
     - Accent visibility on surfaces
-    - Semantic color distinguishability
+    - Inverse content/surface contrast
+    - Error color visibility
+
+    Args:
+        schema: Token schema to validate.
 
     Returns:
-        TokenValidationResult with errors and warnings
+        TokenValidationResult with errors and warnings.
+
+    Examples:
+        >>> from .defaults import create_light_tokens
+        >>> schema = create_light_tokens()
+        >>> result = validate_tokens(schema)
+        >>> result.valid
+        True
+        >>> len(result.warnings)
+        0
     """
     errors = []
     warnings = []

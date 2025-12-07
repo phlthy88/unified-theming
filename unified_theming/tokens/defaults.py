@@ -1,5 +1,7 @@
 """Default token values for light and dark modes."""
 
+from typing import Optional
+
 from ..color.spaces import Color
 from .schema import (
     AccentTokens,
@@ -12,9 +14,26 @@ from .schema import (
 
 
 def create_light_tokens(
-    accent: Color = None, name: str = "Light"
+    accent: Optional[Color] = None, name: str = "Light"
 ) -> UniversalTokenSchema:
-    """Create default light mode tokens."""
+    """Create default light mode token schema.
+
+    Args:
+        accent: Optional accent color, defaults to GNOME blue.
+        name: Theme name, defaults to "Light".
+
+    Returns:
+        UniversalTokenSchema configured for light mode.
+
+    Examples:
+        >>> tokens = create_light_tokens()
+        >>> tokens.name
+        'Light'
+        >>> tokens.variant
+        'light'
+        >>> tokens.surfaces.primary
+        Color(r=255, g=255, b=255, a=1.0)
+    """
     if accent is None:
         accent = Color.from_hex("#3584e4")  # GNOME blue
 
@@ -60,9 +79,26 @@ def create_light_tokens(
 
 
 def create_dark_tokens(
-    accent: Color = None, name: str = "Dark"
+    accent: Optional[Color] = None, name: str = "Dark"
 ) -> UniversalTokenSchema:
-    """Create default dark mode tokens."""
+    """Create default dark mode token schema.
+
+    Args:
+        accent: Optional accent color, defaults to lighter blue for dark mode.
+        name: Theme name, defaults to "Dark".
+
+    Returns:
+        UniversalTokenSchema configured for dark mode.
+
+    Examples:
+        >>> tokens = create_dark_tokens()
+        >>> tokens.name
+        'Dark'
+        >>> tokens.variant
+        'dark'
+        >>> tokens.surfaces.primary
+        Color(r=30, g=30, b=30, a=1.0)
+    """
     if accent is None:
         accent = Color.from_hex("#78aeed")  # Lighter blue for dark mode
 

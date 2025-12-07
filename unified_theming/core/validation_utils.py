@@ -7,6 +7,7 @@ from ..color.spaces import Color
 from ..color.wcag import contrast_ratio, meets_aa
 from ..core.types import ThemeData, ValidationMessage, ValidationLevel
 
+
 def validate_wcag_contrast(
     theme_data: ThemeData,
     color_pairs: List[Tuple[str, str]],
