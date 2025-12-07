@@ -72,8 +72,12 @@ class FlatpakHandler(BaseHandler):
                 Path("/usr/share/themes"),
             ]
 
+            success_count = 0
+            existing_dirs = 0
+
             for theme_dir in theme_dirs:
                 if theme_dir.exists():
+                    existing_dirs += 1
                     try:
                         subprocess.run(
                             [
@@ -86,17 +90,16 @@ class FlatpakHandler(BaseHandler):
                             capture_output=True,
                         )
                         logger.debug(f"Granted access to theme directory: {theme_dir}")
+                        success_count += 1
                     except subprocess.CalledProcessError:
                         logger.warning(
                             f"Failed to grant access to theme directory: {theme_dir}"
                         )
 
-            # Note: We intentionally do NOT set GTK_THEME globally as it can
-            # break Libadwaita apps. Flatpak apps should follow the system
-            # theme via portal settings instead.
-            #
-            # For GTK3 apps that need explicit theme, users can set per-app:
-            # flatpak override --user --env=GTK_THEME=ThemeName com.app.Name
+            # Return False if all existing directories failed
+            if existing_dirs > 0 and success_count == 0:
+                logger.error("All Flatpak override commands failed")
+                return False
 
             logger.debug(f"Flatpak theme access configured for: {theme_data.name}")
             return True
