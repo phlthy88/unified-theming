@@ -1,0 +1,35 @@
+{
+  "color": {
+    "primary": {
+      "$value": "#3584e4",
+      "$type": "color",
+      "$description": "Primary brand color"
+    },
+    "surface": {
+      "light": {
+        "$value": "#ffffff",
+        "$type": "color"
+      },
+      "dark": {
+        "$value": "#303030",
+        "$type": "color"
+      }
+    }
+  },
+  "button": {
+    "background": {
+      "$value": "{color.primary}",
+      "$type": "color"
+    },
+    "text": {
+      "$value": "{color.surface.light}",
+      "$type": "color"
+    }
+  },
+  "content": {
+    "text_color": {
+      "$value": "{button.text}",
+      "$type": "color"
+    }
+  }
+}
