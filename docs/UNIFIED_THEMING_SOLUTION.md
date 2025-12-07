@@ -41,6 +41,15 @@ This document presents a comprehensive solution for achieving **true unified the
 
 ## Part 1: Canonical Color Engine (CCE)
 
+### Accessibility and WCAG Alignment
+
+To ensure the generated palette is readable across toolkits, the canonical engine now references the shared `unified_theming.color.wcag` module for contrast ratio checks, AA/AAA evaluation, and lightness adjustment. Theme authors can plug these helpers into preprocessing steps or let the CLI validate contrast before applying a theme. The `ensure_contrast` routine operates in OKLCH space, so even aggressive tweaks preserve hue/chroma relationships.
+
+Key utilities:
+- `contrast_ratio(fg, bg)` – WCAG 2.x contrast score
+- `meets_aa` / `meets_aaa` – threshold checks for normal and large text
+- `ensure_contrast` – adjusts foreground lightness in OKLCH to hit a desired ratio while keeping alpha intact
+
 ### The Problem
 
 Currently, GTK and Qt use different semantic color models:
