@@ -91,27 +91,14 @@ class FlatpakHandler(BaseHandler):
                             f"Failed to grant access to theme directory: {theme_dir}"
                         )
 
-            # Set environment variables for theme selection
-            subprocess.run(
-                ["flatpak", "override", "--user", f"--env=GTK_THEME={theme_data.name}"],
-                check=True,
-                capture_output=True,
-            )
+            # Note: We intentionally do NOT set GTK_THEME globally as it can
+            # break Libadwaita apps. Flatpak apps should follow the system
+            # theme via portal settings instead.
+            #
+            # For GTK3 apps that need explicit theme, users can set per-app:
+            # flatpak override --user --env=GTK_THEME=ThemeName com.app.Name
 
-            # Additional environment variables that might be relevant
-            subprocess.run(
-                [
-                    "flatpak",
-                    "override",
-                    "--user",
-                    f"--env=QT_QPA_PLATFORMTHEME=gtk2",  # Use GTK theme for Qt apps
-                    f"--env=XDG_CURRENT_DESKTOP=GNOME",  # Ensure theming is enabled
-                ],
-                check=True,
-                capture_output=True,
-            )
-
-            logger.debug(f"Flatpak theme application completed for: {theme_data.name}")
+            logger.debug(f"Flatpak theme access configured for: {theme_data.name}")
             return True
 
         except subprocess.CalledProcessError as e:
