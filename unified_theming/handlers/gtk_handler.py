@@ -16,6 +16,7 @@ from ..core.types import (
     ValidationLevel,
     ValidationResult,
 )
+from ..core.validation_utils import validate_wcag_contrast
 from ..utils.file import write_file_with_backup
 from ..utils.logging_config import get_logger
 from .base import BaseHandler
@@ -277,6 +278,18 @@ class GTKHandler(BaseHandler):
                 f"Theme '{theme_data.name}' missing required colors for GTK: {', '.join(missing_colors)}",
                 component="gtk_handler",
             )
+
+        # Perform WCAG contrast checks
+        gtk_color_pairs = [
+            ("theme_fg_color", "theme_bg_color"),
+            ("theme_text_color", "theme_base_color"),
+            ("theme_selected_fg_color", "theme_selected_bg_color"),
+            # Add more GTK specific pairs as needed
+        ]
+        wcag_messages = validate_wcag_contrast(
+            theme_data, gtk_color_pairs, self.__class__.__name__
+        )
+        result.messages.extend(wcag_messages)
 
         return result
 

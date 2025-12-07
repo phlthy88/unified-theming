@@ -13,6 +13,13 @@ def contrast_ratio(fg: Color, bg: Color) -> float:
 
     Returns:
         Contrast ratio (1.0 to 21.0)
+
+    Examples:
+        >>> contrast_ratio(Color(0, 0, 0), Color(255, 255, 255))
+        21.0
+
+        >>> contrast_ratio(Color(128, 128, 128), Color(255, 255, 255))
+        2.29
     """
     l1 = fg.luminance()
     l2 = bg.luminance()
@@ -32,6 +39,13 @@ def meets_aa(fg: Color, bg: Color, large_text: bool = False) -> bool:
 
     Returns:
         True if contrast meets AA requirements
+
+    Examples:
+        >>> meets_aa(Color(0, 0, 0), Color(255, 255, 255))
+        True
+
+        >>> meets_aa(Color(128, 128, 128), Color(255, 255, 255))
+        False
     """
     ratio = contrast_ratio(fg, bg)
     return ratio >= 3.0 if large_text else ratio >= 4.5
@@ -44,10 +58,17 @@ def meets_aaa(fg: Color, bg: Color, large_text: bool = False) -> bool:
     Args:
         fg: Foreground color
         bg: Background color
-        large_text: True for large text (18pt+ or 14pt+ bold)
+        large_text: True for large text (18pt+ bold)
 
     Returns:
         True if contrast meets AAA requirements
+
+    Examples:
+        >>> meets_aaa(Color(0, 0, 0), Color(255, 255, 255))
+        True
+
+        >>> meets_aaa(Color(128, 128, 128), Color(255, 255, 255))
+        False
     """
     ratio = contrast_ratio(fg, bg)
     return ratio >= 4.5 if large_text else ratio >= 7.0
@@ -66,6 +87,13 @@ def ensure_contrast(fg: Color, bg: Color, min_ratio: float = 4.5) -> Color:
 
     Returns:
         Adjusted foreground color meeting contrast requirement
+
+    Examples:
+        >>> ensure_contrast(Color(128, 128, 128), Color(200, 200, 200))
+        Color(r=0, g=0, b=0, a=1.0)
+
+        >>> ensure_contrast(Color(255, 0, 0), Color(255, 255, 255), 7.0)
+        Color(r=255, g=0, b=0, a=1.0)
     """
     if contrast_ratio(fg, bg) >= min_ratio:
         return fg
