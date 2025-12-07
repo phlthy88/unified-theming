@@ -1,4 +1,5 @@
 """WCAG accessibility calculations for color contrast."""
+
 from .spaces import Color
 
 

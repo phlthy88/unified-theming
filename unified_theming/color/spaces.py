@@ -1,4 +1,5 @@
 """Color space implementations with perceptual OKLCH support."""
+
 import math
 from dataclasses import dataclass
 from typing import Tuple

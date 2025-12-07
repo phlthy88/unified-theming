@@ -1,4 +1,5 @@
 """Universal design token schema for cross-toolkit theming."""
+
 from dataclasses import dataclass, field
 from typing import Optional
 

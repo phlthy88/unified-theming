@@ -1,4 +1,5 @@
 """Tests for WCAG accessibility calculations."""
+
 import pytest
 
 from unified_theming.color.spaces import Color

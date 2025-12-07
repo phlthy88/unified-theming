@@ -1,4 +1,5 @@
 """Tests for color space implementations."""
+
 import math
 
 import pytest
